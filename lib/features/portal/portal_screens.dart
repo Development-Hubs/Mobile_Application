@@ -484,7 +484,7 @@ class _SignSheetState extends ConsumerState<_SignSheet> {
         child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Text(context.tr('agreements.sign_title'), style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 14),
-          TextField(controller: _name, textCapitalization: TextCapitalization.words, decoration: InputDecoration(labelText: context.tr('agreements.full_name'), errorText: _error?.fieldError('name'))),
+          TextField(controller: _name, onChanged: (_) => setState(() {}), textCapitalization: TextCapitalization.words, decoration: InputDecoration(labelText: context.tr('agreements.full_name'), errorText: _error?.fieldError('name'))),
           const SizedBox(height: 14),
           Row(children: [
             Expanded(child: Text(context.tr('agreements.draw'), style: const TextStyle(fontWeight: FontWeight.w700))),
