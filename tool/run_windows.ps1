@@ -48,21 +48,27 @@ function Find-Booted {
   foreach ($line in (& $adb devices)) { if ($line -match '^(emulator-\d+)\s+device\s*$') { return $Matches[1] } }
   return $null
 }
-function Get-Emulator {
-  & $adb start-server | Out-Null
-  $id = Find-Booted
-  if (-not $id) {
-    # an emulator that is listed as offline will not take an install: restart it
-    foreach ($line in (& $adb devices)) { if ($line -match '^(emulator-\d+)\s+offline') { & $adb -s $Matches[1] emu kill 2>$null | Out-Null } }
-    Write-Host "Starting emulator $avd ..."
-    Start-Process "$sdk\emulator\emulator.exe" -ArgumentList "-avd $avd -netdelay none -netspeed full"
-    & $adb wait-for-device
+function Wait-Booted([int]$seconds) {
+  for ($i = 0; $i -lt $seconds; $i += 3) {
     $id = Find-Booted
+    if ($id -and ((& $adb -s $id shell getprop sys.boot_completed 2>$null) -join "").Trim() -eq "1") { return $id }
+    Start-Sleep -Seconds 3
   }
-  if (-not $id) { return $null }
-  $tries = 0
-  while (((& $adb -s $id shell getprop sys.boot_completed) -join "").Trim() -ne "1" -and $tries -lt 120) { Start-Sleep -Seconds 2; $tries++ }
-  return $id
+  return $null
+}
+function Get-Emulator {
+  & $adb start-server 2>$null | Out-Null
+  $id = Wait-Booted 6
+  if ($id) { return $id }
+  # an emulator window can be open while adb cannot see it (hung, or a stale adb server): restart both
+  Write-Host "Restarting adb and the emulator ..."
+  & $adb kill-server 2>$null | Out-Null
+  Get-Process -Name "qemu-system-*", "emulator" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+  Start-Sleep -Seconds 3
+  & $adb start-server 2>$null | Out-Null
+  Write-Host "Starting emulator $avd (about 1-2 minutes) ..."
+  Start-Process "$sdk\emulator\emulator.exe" -ArgumentList "-avd $avd -no-snapshot-load -netdelay none -netspeed full"
+  return (Wait-Booted 240)
 }
 $null = Get-Emulator
 Write-Host "Emulator ready."
