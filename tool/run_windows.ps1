@@ -42,14 +42,24 @@ if ($avds -notcontains $avd) {
   "no" | & "$tools\avdmanager.bat" create avd -n $avd -k $image -d pixel_7 --force
 }
 $adb = "$sdk\platform-tools\adb.exe"
-$running = (& $adb devices) -match "emulator-"
-if (-not $running) {
-  Write-Host "Starting emulator $avd ..."
-  Start-Process "$sdk\emulator\emulator.exe" -ArgumentList "-avd $avd -netdelay none -netspeed full"
-  & $adb wait-for-device
+
+# Returns the id of a booted emulator (e.g. emulator-5554), starting or restarting the AVD when needed.
+function Get-Emulator {
+  & $adb start-server | Out-Null
+  $id = ((& $adb devices) | Select-String '^(emulator-\d+)\s+device\s*$' | Select-Object -First 1).Matches.Groups[1].Value
+  if (-not $id) {
+    # an emulator that is listed as offline will not take an install: restart it
+    (& $adb devices) | Select-String '^(emulator-\d+)\s+offline' | ForEach-Object { & $adb -s $_.Matches.Groups[1].Value emu kill 2>$null }
+    Write-Host "Starting emulator $avd ..."
+    Start-Process "$sdk\emulator\emulator.exe" -ArgumentList "-avd $avd -netdelay none -netspeed full"
+    & $adb wait-for-device
+    $id = ((& $adb devices) | Select-String '^(emulator-\d+)\s+device' | Select-Object -First 1).Matches.Groups[1].Value
+  }
   $tries = 0
-  while (((& $adb shell getprop sys.boot_completed) -join "").Trim() -ne "1" -and $tries -lt 90) { Start-Sleep -Seconds 2; $tries++ }
+  while (((& $adb -s $id shell getprop sys.boot_completed) -join "").Trim() -ne "1" -and $tries -lt 120) { Start-Sleep -Seconds 2; $tries++ }
+  return $id
 }
+$null = Get-Emulator
 Write-Host "Emulator ready."
 
 # ---- App code -----------------------------------------------------------------------------------------------
@@ -71,5 +81,7 @@ flutter test
 
 Stop-Transcript | Out-Null
 Step "Run (press r to reload, q to quit)"
-$device = ((& $adb devices) -match "emulator-" | Select-Object -First 1) -replace "\s+device$", ""
+$device = Get-Emulator
+if (-not $device) { Write-Host "The emulator did not start. Open Android Studio > Device Manager, start onesource_pixel, then run this script again." -ForegroundColor Red; exit 1 }
+Write-Host "Installing on $device (first build takes a few minutes)..."
 flutter run -d $device --dart-define-from-file="config\$Target.local.json"

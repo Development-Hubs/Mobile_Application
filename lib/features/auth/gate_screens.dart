@@ -20,15 +20,15 @@ class SplashScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Scaffold(
         backgroundColor: Palette.maroonDeep,
-        body: DecoratedBox(
-          decoration: const BoxDecoration(gradient: Palette.heroGradient),
+        body: const DecoratedBox(
+          decoration: BoxDecoration(gradient: Palette.heroGradient),
           child: Stack(children: [
-            const Align(alignment: Alignment.bottomCenter, child: SkylineSilhouette(height: 220)),
+            Align(alignment: Alignment.bottomCenter, child: SkylineSilhouette(height: 220)),
             Center(
               child: Column(mainAxisSize: MainAxisSize.min, children: [
-                const BrandMark(size: 76),
-                const SizedBox(height: 18),
-                const Directionality(
+                BrandMark(size: 76),
+                SizedBox(height: 18),
+                Directionality(
                   textDirection: TextDirection.ltr,
                   child: Text.rich(
                     TextSpan(children: [
@@ -38,8 +38,8 @@ class SplashScreen extends StatelessWidget {
                     style: TextStyle(fontFamily: 'Plex', fontSize: 26, fontWeight: FontWeight.w700),
                   ),
                 ),
-                const SizedBox(height: 32),
-                const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.white70)),
+                SizedBox(height: 32),
+                SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.white70)),
               ]),
             ),
           ]),
