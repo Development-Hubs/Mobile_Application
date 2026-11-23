@@ -1,0 +1,6 @@
+{
+  "API_BASE_URL": "https://demoagent.onesourceerp.com",
+  "COMPANY_CODE": "",
+  "ENV_NAME": "DEMO",
+  "ALLOW_CUSTOM_SERVER": false
+}

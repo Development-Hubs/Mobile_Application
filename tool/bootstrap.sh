@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Generates the native host files that are not committed (Xcode project, Gradle wrapper, icons, styles),
+# then applies the app's platform settings. Run once after cloning, with Flutter 3.27 or newer.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+flutter --version
+# flutter create never overwrites files that already exist (lib/, pubspec.yaml, AndroidManifest.xml, MainActivity.kt)
+flutter create --platforms=android,ios --org qa.onesource --project-name onesource_connect .
+rm -f test/widget_test.dart   # the counter-app sample test from the template
+python3 tool/configure_platforms.py
+flutter pub get
+dart run tool/check_strings.dart
+echo
+echo "Done. Next:"
+echo "  cp config/demoagent.example.json config/demoagent.local.json   # then edit if needed"
+echo "  flutter run --dart-define-from-file=config/demoagent.local.json"
