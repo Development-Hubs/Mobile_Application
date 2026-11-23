@@ -44,17 +44,22 @@ if ($avds -notcontains $avd) {
 $adb = "$sdk\platform-tools\adb.exe"
 
 # Returns the id of a booted emulator (e.g. emulator-5554), starting or restarting the AVD when needed.
+function Find-Booted {
+  foreach ($line in (& $adb devices)) { if ($line -match '^(emulator-\d+)\s+device\s*$') { return $Matches[1] } }
+  return $null
+}
 function Get-Emulator {
   & $adb start-server | Out-Null
-  $id = ((& $adb devices) | Select-String '^(emulator-\d+)\s+device\s*$' | Select-Object -First 1).Matches.Groups[1].Value
+  $id = Find-Booted
   if (-not $id) {
     # an emulator that is listed as offline will not take an install: restart it
-    (& $adb devices) | Select-String '^(emulator-\d+)\s+offline' | ForEach-Object { & $adb -s $_.Matches.Groups[1].Value emu kill 2>$null }
+    foreach ($line in (& $adb devices)) { if ($line -match '^(emulator-\d+)\s+offline') { & $adb -s $Matches[1] emu kill 2>$null | Out-Null } }
     Write-Host "Starting emulator $avd ..."
     Start-Process "$sdk\emulator\emulator.exe" -ArgumentList "-avd $avd -netdelay none -netspeed full"
     & $adb wait-for-device
-    $id = ((& $adb devices) | Select-String '^(emulator-\d+)\s+device' | Select-Object -First 1).Matches.Groups[1].Value
+    $id = Find-Booted
   }
+  if (-not $id) { return $null }
   $tries = 0
   while (((& $adb -s $id shell getprop sys.boot_completed) -join "").Trim() -ne "1" -and $tries -lt 120) { Start-Sleep -Seconds 2; $tries++ }
   return $id
