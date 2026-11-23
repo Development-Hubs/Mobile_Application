@@ -30,8 +30,13 @@ class AuthScaffold extends ConsumerWidget {
       value: SystemUiOverlayStyle.light,
       child: Scaffold(
         backgroundColor: Palette.maroonDeep,
-        body: Stack(children: [
-          AnimatedContainer(
+        // the photo is positioned, so the Stack takes the whole screen and the form sheet below gets the rest of it
+        body: Stack(fit: StackFit.expand, children: [
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: AnimatedContainer(
             duration: MotionScope.duration(context, const Duration(milliseconds: 250)),
             height: band + 40,
             child: Stack(fit: StackFit.expand, children: [
@@ -54,6 +59,7 @@ class AuthScaffold extends ConsumerWidget {
                 ),
               ),
             ]),
+          ),
           ),
           Positioned.fill(
             top: band,

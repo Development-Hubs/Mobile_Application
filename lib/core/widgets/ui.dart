@@ -362,7 +362,7 @@ class _BusyButtonState extends State<BusyButton> {
             ]),
     );
     if (widget.outlined) {
-      return OutlinedButton(onPressed: enabled ? _run : null, child: content);
+      return OutlinedButton(style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(52)), onPressed: enabled ? _run : null, child: content);
     }
     return FilledButton(
       style: FilledButton.styleFrom(
