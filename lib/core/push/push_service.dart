@@ -13,7 +13,7 @@ import '../auth/session_controller.dart';
 /// Push notifications through Firebase Cloud Messaging (Android) and APNs via FCM (iOS).
 ///
 /// Push works once your Firebase project is connected, either with the FIREBASE_* build values in
-/// config/<env>.json or with the platform files from `flutterfire configure` (see docs/push.md).
+/// `config/<env>.json` or with the platform files from `flutterfire configure` (see docs/push.md).
 /// Without them [init] fails quietly and the app keeps working with the in-app inbox, which is always
 /// the source of truth.
 class PushService {

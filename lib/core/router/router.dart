@@ -124,7 +124,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(parentNavigatorKey: _rootKey, path: '/attendance', builder: (_, __) => const AttendanceScreen()),
       GoRoute(parentNavigatorKey: _rootKey, path: '/attendance/month', builder: (_, __) => const AttendanceMonthScreen()),
-      GoRoute(parentNavigatorKey: _rootKey, path: '/attendance/corrections', builder: (_, s) => CorrectionsScreen(date: s.extra as String?)),
+      GoRoute(parentNavigatorKey: _rootKey, path: '/attendance/corrections', builder: (_, s) => CorrectionsScreen(forDate: s.extra as String?)),
       GoRoute(parentNavigatorKey: _rootKey, path: '/cases/new', builder: (_, s) => NewCaseScreen(prefill: s.extra is CasePrefill ? s.extra as CasePrefill : null)),
       GoRoute(parentNavigatorKey: _rootKey, path: '/cases/:id', builder: (_, s) => CaseDetailScreen(id: s.pathParameters['id']!)),
       GoRoute(parentNavigatorKey: _rootKey, path: '/renewals', builder: (_, __) => const RenewalsScreen()),

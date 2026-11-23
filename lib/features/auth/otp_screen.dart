@@ -132,12 +132,12 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
 }
 
 class _CodeBoxes extends StatefulWidget {
-  const _CodeBoxes({required this.controller, required this.focus, required this.error, required this.onComplete, this.length = 6});
+  const _CodeBoxes({required this.controller, required this.focus, required this.error, required this.onComplete});
   final TextEditingController controller;
   final FocusNode focus;
   final bool error;
   final VoidCallback onComplete;
-  final int length;
+  static const length = 6;
 
   @override
   State<_CodeBoxes> createState() => _CodeBoxesState();
@@ -153,7 +153,7 @@ class _CodeBoxesState extends State<_CodeBoxes> {
 
   void _changed() {
     setState(() {});
-    if (widget.controller.text.length == widget.length) widget.onComplete();
+    if (widget.controller.text.length == _CodeBoxes.length) widget.onComplete();
   }
 
   @override
@@ -177,7 +177,7 @@ class _CodeBoxesState extends State<_CodeBoxes> {
             focusNode: widget.focus,
             keyboardType: TextInputType.number,
             autofillHints: const [AutofillHints.oneTimeCode],
-            maxLength: widget.length,
+            maxLength: _CodeBoxes.length,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             decoration: const InputDecoration(counterText: ''),
           ),
@@ -186,10 +186,10 @@ class _CodeBoxesState extends State<_CodeBoxes> {
           onTap: () => widget.focus.requestFocus(),
           child: Semantics(
             label: context.tr('auth.enter_code'),
-            value: '${text.length} / ${widget.length}',
+            value: '${text.length} / ${_CodeBoxes.length}',
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: List.generate(widget.length, (i) {
+              children: List.generate(_CodeBoxes.length, (i) {
                 final filled = i < text.length;
                 final active = i == text.length && widget.focus.hasFocus;
                 final color = widget.error ? Palette.danger : (active ? Palette.maroon : (filled ? Palette.gold : (dark ? Colors.white24 : const Color(0x22000000))));

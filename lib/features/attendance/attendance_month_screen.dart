@@ -80,7 +80,7 @@ class _AttendanceMonthScreenState extends ConsumerState<AttendanceMonthScreen> {
                   child: ListRow(
                     icon: Icons.today_rounded,
                     iconColor: Palette.forStatus(str(d['status'])),
-                    title: Fmt.weekday(date(d['date']), context.lang) + ' · ' + Fmt.dayMonth(date(d['date']), context.lang),
+                    title: '${Fmt.weekday(date(d['date']), context.lang)} · ${Fmt.dayMonth(date(d['date']), context.lang)}',
                     subtitle: d['check_in'] == null ? null : '${d['check_in']} → ${d['check_out'] ?? '…'} · ${Fmt.hm((integer(d['worked_minutes']) ?? 0) * 60)}',
                     trailing: StatusChip(str(d['status'])),
                     onTap: () => _daySheet(context, d),
@@ -179,8 +179,10 @@ class _Grid extends StatelessWidget {
 
 /// My correction requests and a form to ask for a new one. Managers approve on the web.
 class CorrectionsScreen extends ConsumerWidget {
-  const CorrectionsScreen({super.key, this.date});
-  final String? date;
+  const CorrectionsScreen({super.key, this.forDate});
+
+  /// Day to pre-fill when opened from the month calendar (YYYY-MM-DD).
+  final String? forDate;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -229,7 +231,7 @@ class CorrectionsScreen extends ConsumerWidget {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      builder: (_) => _CorrectionForm(kinds: kinds, initialDate: date),
+      builder: (_) => _CorrectionForm(kinds: kinds, initialDate: forDate),
     );
     if (created == true) ref.invalidate(correctionsProvider);
   }
@@ -275,7 +277,7 @@ class _CorrectionFormState extends ConsumerState<_CorrectionForm> {
           ),
           const SizedBox(height: 8),
           DropdownButtonFormField<String>(
-            value: kinds.containsKey(_kind) ? _kind : kinds.keys.first,
+            initialValue: kinds.containsKey(_kind) ? _kind : kinds.keys.first,
             decoration: InputDecoration(labelText: context.tr('attendance.what')),
             items: kinds.entries.map((e) => DropdownMenuItem(value: e.key, child: Text('${e.value}'))).toList(),
             onChanged: (v) => setState(() => _kind = v ?? _kind),

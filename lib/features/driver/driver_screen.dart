@@ -41,7 +41,7 @@ class _DriverScreenState extends ConsumerState<DriverScreen> {
     final trips = ref.watch(tripsProvider(key));
     return ModulePage(
       title: context.tr('module.driver'),
-      subtitle: Fmt.weekday(_day, context.lang) + ' · ' + Fmt.date(_day, context.lang),
+      subtitle: '${Fmt.weekday(_day, context.lang)} · ${Fmt.date(_day, context.lang)}',
       icon: Icons.local_shipping_rounded,
       onRefresh: () async => ref.invalidate(tripsProvider(key)),
       headerBottom: SizedBox(
@@ -191,7 +191,8 @@ class _TripCard extends ConsumerWidget {
     } on ApiException catch (e) {
       if (e.isOffline && to != 'completed') {
         // no signal: keep the milestone with its time and place; it is sent when the connection is back
-        await ref.read(offlineStoreProvider).enqueue(OutboxItem(key: key, path: path, body: body, label: '${t['reference']} · ${context.tr('trips.step.$to')}'));
+        final label = '${t['reference']} · ${context.tr('trips.step.$to')}';
+        await ref.read(offlineStoreProvider).enqueue(OutboxItem(key: key, path: path, body: body, label: label));
         ref.read(outboxVersionProvider.notifier).state++;
         if (context.mounted) Toast.info(context, context.tr('outbox.queued'));
       } else if (context.mounted) {

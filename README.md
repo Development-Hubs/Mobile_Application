@@ -25,6 +25,11 @@ The mobile companion of the OneSource ERP, for **staff**, **customers** and **wo
 
 Permissions always come from the ERP (`GET me` → `permissions`, `areas`, `modules`, `attendance`, `driver`). Nothing is unlocked by a choice made on the phone, and the server checks every call again.
 
+## Windows: one command
+
+With Android Studio installed: `git clone https://github.com/Development-Hubs/Mobile_Application.git C:\OneSourceMobile`, then in PowerShell
+`powershell -ExecutionPolicy Bypass -File C:\OneSourceMobile\tool\run_windows.ps1`. It links the Android SDK to a path without spaces, downloads an emulator image, creates and boots the emulator, generates the host projects, analyses, tests and runs the app.
+
 ## Getting started
 
 Requirements: Flutter **3.27 or newer** (stable), Xcode 15+ for iOS, Android Studio / JDK 17 for Android, Python 3.

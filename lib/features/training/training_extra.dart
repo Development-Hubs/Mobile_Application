@@ -432,7 +432,7 @@ class _AssessFormState extends ConsumerState<_AssessForm> {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             DropdownButtonFormField<String>(
-              value: methods.containsKey(_method) ? _method : methods.keys.first,
+              initialValue: methods.containsKey(_method) ? _method : methods.keys.first,
               decoration: InputDecoration(labelText: context.tr('assessor.method')),
               items: [for (final e in methods.entries) DropdownMenuItem(value: e.key, child: Text('${e.value}'))],
               onChanged: (v) => setState(() => _method = v ?? _method),

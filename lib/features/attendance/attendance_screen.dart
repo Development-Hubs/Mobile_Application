@@ -23,7 +23,7 @@ class AttendanceScreen extends ConsumerWidget {
     final day = ref.watch(attendanceProvider);
     return ModulePage(
       title: context.tr('module.attendance'),
-      subtitle: Fmt.weekday(DateTime.now(), context.lang) + ' · ' + Fmt.date(DateTime.now(), context.lang),
+      subtitle: '${Fmt.weekday(DateTime.now(), context.lang)} · ${Fmt.date(DateTime.now(), context.lang)}',
       icon: Icons.fingerprint_rounded,
       trailing: GlassIconButton(icon: Icons.calendar_month_rounded, tooltip: context.tr('attendance.month'), onTap: () => context.push('/attendance/month')),
       onRefresh: () => ref.read(attendanceProvider.notifier).reload(),

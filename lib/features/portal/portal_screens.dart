@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -7,7 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart' show NumberFormat;
 
 import '../../core/api/api_client.dart';
 import '../../core/api/api_exception.dart';
@@ -749,8 +748,10 @@ class _CandidateCard extends ConsumerWidget {
   }
 
   Future<void> _choose(BuildContext context, WidgetRef ref) async {
+    final done = context.tr('shortlists.chosen', {'name': c['name']});
     if (!await confirmAction(context, title: context.tr('shortlists.choose_q', {'name': c['name']}), message: context.tr('shortlists.choose_body'), icon: Icons.favorite_rounded)) return;
-    await _send(context, ref, 'choose', {'candidate': c['id']}, context.tr('shortlists.chosen', {'name': c['name']}));
+    if (!context.mounted) return;
+    await _send(context, ref, 'choose', {'candidate': c['id']}, done);
   }
 
   Future<void> _interview(BuildContext context, WidgetRef ref) async {

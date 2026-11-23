@@ -29,9 +29,9 @@ class SplashScreen extends StatelessWidget {
                 const BrandMark(size: 84),
                 const SizedBox(height: 18),
                 Text.rich(
-                  TextSpan(children: [
-                    const TextSpan(text: 'OneSource ', style: TextStyle(color: Colors.white)),
-                    const TextSpan(text: 'Connect', style: TextStyle(color: Palette.gold)),
+                  const TextSpan(children: [
+                    TextSpan(text: 'OneSource ', style: TextStyle(color: Colors.white)),
+                    TextSpan(text: 'Connect', style: TextStyle(color: Palette.gold)),
                   ]),
                   style: Theme.of(context).textTheme.headlineMedium,
                 ),

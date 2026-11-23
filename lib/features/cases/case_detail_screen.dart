@@ -334,7 +334,7 @@ class _ComposerState extends ConsumerState<_Composer> {
                 tooltip: context.tr('send'),
                 style: IconButton.styleFrom(backgroundColor: _note ? Palette.gold : Palette.maroon, minimumSize: const Size(48, 48)),
                 onPressed: _sending ? null : _send,
-                icon: _sending ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : Icon(Icons.send_rounded, color: Colors.white),
+                icon: _sending ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Icon(Icons.send_rounded, color: Colors.white),
               ),
             ]),
           ]),

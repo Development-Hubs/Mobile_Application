@@ -1,8 +1,8 @@
 // Fails when English and Arabic strings differ in keys or {placeholders}. Run: dart run tool/check_strings.dart
 import 'dart:io';
 
-import '../lib/core/i18n/strings_ar.dart';
-import '../lib/core/i18n/strings_en.dart';
+import 'package:onesource_connect/core/i18n/strings_ar.dart';
+import 'package:onesource_connect/core/i18n/strings_en.dart';
 
 void main() {
   final problems = <String>[];

@@ -246,7 +246,7 @@ class _AttendanceCard extends ConsumerWidget {
                   ),
                 ]),
               ),
-              Icon(Icons.chevron_right_rounded, color: Colors.white),
+              const Icon(Icons.chevron_right_rounded, color: Colors.white),
             ]);
           },
         ),

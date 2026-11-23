@@ -47,7 +47,7 @@ class _RenewalsScreenState extends ConsumerState<RenewalsScreen> {
         empty: EmptyView(icon: Icons.verified_rounded, title: context.tr('renewals.empty')),
         itemBuilder: (context, t, i) {
           final exp = date(t['expires_on']);
-          final days = exp == null ? null : exp.difference(DateTime.now()).inDays;
+          final days = exp?.difference(DateTime.now()).inDays;
           final color = days == null ? Palette.navySoft : (days < 0 ? Palette.danger : (days <= 14 ? Palette.warning : Palette.success));
           return ListRow(
             icon: _icon(str(t['requirement'])),

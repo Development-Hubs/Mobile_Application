@@ -21,7 +21,7 @@ class ApiClient {
       ..connectTimeout = const Duration(seconds: 15)
       ..receiveTimeout = const Duration(seconds: 30)
       ..sendTimeout = const Duration(seconds: 60)
-      ..validateStatus = (_) => true
+      ..validateStatus = ((_) => true)
       ..responseType = ResponseType.json;
   }
 
