@@ -227,7 +227,7 @@ class _SkylinePainter extends CustomPainter {
     if (dhow) _drawDhow(canvas, Offset(w * (.12 + .76 * ((t * 1.0) % 1)), horizon + (h - horizon) * .5), (h - horizon) * .55);
   }
 
-  Path _shape(String kind, double x, double top, double bw, double bh) {
+  static Path _shape(String kind, double x, double top, double bw, double bh) {
     final p = Path();
     final bottom = top + bh;
     switch (kind) {
@@ -316,4 +316,52 @@ class _SkylinePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_SkylinePainter old) => old.t != t || old.night != night;
+}
+
+
+/// A quiet silhouette of the West Bay skyline for brand surfaces: two layers of towers in white at low opacity,
+/// a thin Corniche line and a few warm lights. Generated artwork; static.
+class SkylineSilhouette extends StatelessWidget {
+  const SkylineSilhouette({super.key, this.height = 150, this.opacity = 1});
+  final double height;
+  final double opacity;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+        height: height,
+        width: double.infinity,
+        child: CustomPaint(painter: _SilhouettePainter(opacity)),
+      );
+}
+
+class _SilhouettePainter extends CustomPainter {
+  _SilhouettePainter(this.opacity);
+  final double opacity;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width, h = size.height;
+    final base = h - 6;
+    // back row: low, wide, faint
+    final back = Paint()..color = Colors.white.withValues(alpha: .07 * opacity);
+    for (var i = 0; i < 22; i++) {
+      final x = i / 22 * w, bw = w / 24, bh = h * (.18 + ((i * 37) % 11) / 11 * .22);
+      canvas.drawRRect(RRect.fromRectAndCorners(Rect.fromLTWH(x, base - bh, bw, bh), topLeft: const Radius.circular(2), topRight: const Radius.circular(2)), back);
+    }
+    // front row: the recognisable towers
+    final front = Paint()..color = Colors.white.withValues(alpha: .14 * opacity);
+    for (final t in _SkylinePainter._towers) {
+      final x = t.x * w, bw = t.w * w * .9, bh = t.h * h * .95;
+      canvas.drawPath(_SkylinePainter._shape(t.kind, x, base - bh, bw, bh), front);
+    }
+    // Corniche line and lamps
+    canvas.drawRect(Rect.fromLTWH(0, base, w, 1.2), Paint()..color = Colors.white.withValues(alpha: .25 * opacity));
+    final lamp = Paint()..color = Palette.goldSoft.withValues(alpha: .7 * opacity);
+    for (var i = 0; i < 18; i++) {
+      canvas.drawCircle(Offset((i + .5) / 18 * w, base - 2), 1.3, lamp);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_SilhouettePainter old) => old.opacity != opacity;
 }

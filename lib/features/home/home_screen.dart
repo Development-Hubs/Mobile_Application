@@ -67,44 +67,61 @@ class _Hero extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final top = MediaQuery.paddingOf(context).top;
     final unread = ref.watch(unreadNoticesProvider).valueOrNull ?? 0;
-    return ClipRRect(
-      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(36)),
-      child: SizedBox(
-        height: 250 + top,
-        child: Stack(fit: StackFit.expand, children: [
-          const DohaSkyline(height: 400, showDhow: true),
-          DecoratedBox(
-            decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Palette.midnight.withValues(alpha: .1), Palette.midnight.withValues(alpha: .55)])),
-          ),
-          Padding(
-            padding: EdgeInsets.fromLTRB(20, top + 12, 20, 22),
+    final role = me.isStaff ? (me.jobTitle ?? context.tr('home.staff')) : context.tr('workspace.kind.${me.type}');
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: Palette.heroGradient,
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(30)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(children: [
+        const Positioned(left: 0, right: 0, bottom: 0, child: SkylineSilhouette(height: 120, opacity: .9)),
+        HeaderTone(
+          onBrand: true,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(20, top + 14, 20, 28),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
                 Container(
-                  width: 48,
-                  height: 48,
+                  width: 46,
+                  height: 46,
                   alignment: Alignment.center,
-                  decoration: BoxDecoration(gradient: Palette.goldGradient, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Palette.gold.withValues(alpha: .4), blurRadius: 14)]),
-                  child: Text(me.initials, style: const TextStyle(color: Palette.navy, fontWeight: FontWeight.w800, fontSize: 18)),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: .14),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white.withValues(alpha: .35), width: 1.5),
+                  ),
+                  child: Text(me.initials, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16)),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(me.companyName.isNotEmpty ? me.companyName : 'OneSource', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Palette.goldSoft, fontWeight: FontWeight.w700, fontSize: 13)),
-                    Text(me.isStaff ? (me.jobTitle ?? context.tr('home.staff')) : context.tr('workspace.kind.${me.type}'), style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                    Text(me.companyName.isNotEmpty ? me.companyName : 'OneSource', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
+                    const SizedBox(height: 2),
+                    Text(role, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.white.withValues(alpha: .72), fontSize: 12)),
                   ]),
                 ),
-                GlassIconButton(icon: Icons.notifications_rounded, badge: unread, tooltip: context.tr('module.notifications'), onTap: () => context.go('/inbox')),
+                GlassIconButton(icon: Icons.notifications_none_rounded, badge: unread, tooltip: context.tr('module.notifications'), onTap: () => context.go('/inbox')),
               ]),
-              const Spacer(),
-              Text(_greeting(context), style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w600)),
-              Text(me.name.split(' ').first, style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: Colors.white)),
+              const SizedBox(height: 28),
+              Text(_greeting(context), style: TextStyle(color: Colors.white.withValues(alpha: .75), fontWeight: FontWeight.w500, fontSize: 14)),
               const SizedBox(height: 2),
-              Text('${Fmt.weekday(DateTime.now(), context.lang)} · ${Fmt.date(DateTime.now(), context.lang)}', style: const TextStyle(color: Colors.white70)),
+              Text(me.name.split(' ').first, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w700, height: 1.25)),
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(color: Colors.white.withValues(alpha: .12), borderRadius: BorderRadius.circular(999)),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(Icons.calendar_today_rounded, size: 13, color: Colors.white.withValues(alpha: .85)),
+                  const SizedBox(width: 6),
+                  Text('${Fmt.weekday(DateTime.now(), context.lang)} · ${Fmt.date(DateTime.now(), context.lang)}', style: TextStyle(color: Colors.white.withValues(alpha: .9), fontSize: 12, fontWeight: FontWeight.w500)),
+                ]),
+              ),
+              const SizedBox(height: 18),
             ]),
           ),
-        ]),
-      ),
+        ),
+      ]),
     );
   }
 }
@@ -178,7 +195,7 @@ class _StaffHome extends ConsumerWidget {
         ]),
       ),
       if (modules.isNotEmpty) ...[
-        Padding(padding: const EdgeInsets.fromLTRB(20, 22, 20, 10), child: Text(context.tr('home.your_work'), style: Theme.of(context).textTheme.titleMedium)),
+        Padding(padding: const EdgeInsets.fromLTRB(20, 22, 20, 10), child: Text(context.tr('home.your_work'), style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700))),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: GridView.count(
@@ -187,7 +204,7 @@ class _StaffHome extends ConsumerWidget {
             physics: const NeverScrollableScrollPhysics(),
             mainAxisSpacing: 10,
             crossAxisSpacing: 10,
-            childAspectRatio: .95,
+            childAspectRatio: .92,
             children: [for (final (i, m) in modules.indexed) Reveal(index: i, child: ModuleTile(m: m))],
           ),
         ),
@@ -210,43 +227,44 @@ class _AttendanceCard extends ConsumerWidget {
       borderRadius: BorderRadius.circular(24),
       onTap: () => context.push('/attendance'),
       child: Container(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          gradient: Palette.heroGradient,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [BoxShadow(color: Palette.maroon.withValues(alpha: .3), blurRadius: 20, offset: const Offset(0, 10))],
+          color: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: Theme.of(context).dividerColor),
+          boxShadow: [BoxShadow(color: Palette.ink.withValues(alpha: .06), blurRadius: 24, offset: const Offset(0, 8))],
         ),
         child: day.when(
-          loading: () => const SizedBox(height: 64, child: Center(child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))),
+          loading: () => const SizedBox(height: 64, child: Center(child: CircularProgressIndicator(strokeWidth: 2))),
           error: (e, _) => Row(children: [
-            const Icon(Icons.error_outline_rounded, color: Colors.white),
+            const Icon(Icons.error_outline_rounded, color: Palette.danger),
             const SizedBox(width: 10),
-            Expanded(child: Text(context.tr('attendance.load_error'), style: const TextStyle(color: Colors.white))),
-            TextButton(onPressed: () => ref.invalidate(attendanceProvider), child: Text(context.tr('retry'), style: const TextStyle(color: Palette.goldSoft))),
+            Expanded(child: Text(context.tr('attendance.load_error'))),
+            TextButton(onPressed: () => ref.invalidate(attendanceProvider), child: Text(context.tr('retry'))),
           ]),
           data: (d) {
             final needs = d.linked && d.state == 'off' && !d.dayOff && !d.onLeave;
             return Row(children: [
               Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(color: Colors.white.withValues(alpha: .15), borderRadius: BorderRadius.circular(18)),
-                child: Icon(needs ? Icons.alarm_rounded : Icons.fingerprint_rounded, color: Palette.goldSoft, size: 30),
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(gradient: needs ? Palette.heroGradient : null, color: needs ? null : Palette.success.withValues(alpha: .1), borderRadius: BorderRadius.circular(16)),
+                child: Icon(needs ? Icons.fingerprint_rounded : Icons.check_circle_outline_rounded, color: needs ? Colors.white : Palette.success, size: 28),
               ),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(context.tr(needs ? 'home.mark_attendance' : 'attendance.state.${d.state}'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 17)),
+                  Text(context.tr(needs ? 'home.mark_attendance' : 'attendance.state.${d.state}'), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
                   const SizedBox(height: 2),
                   Text(
                     needs
                         ? context.tr('home.mark_attendance_body', {'shift': d.shiftStart ?? '—'})
                         : '${context.tr('attendance.worked_today')}: ${Fmt.hm(d.workedSeconds)}${d.firstIn != null ? ' · ${context.tr('attendance.first_in')} ${d.firstIn}' : ''}',
-                    style: const TextStyle(color: Colors.white70, fontSize: 13),
+                    style: TextStyle(color: Theme.of(context).hintColor, fontSize: 13),
                   ),
                 ]),
               ),
-              const Icon(Icons.chevron_right_rounded, color: Colors.white),
+              Icon(Icons.chevron_right_rounded, color: Theme.of(context).hintColor),
             ]);
           },
         ),
@@ -267,19 +285,19 @@ class _Notice extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: action,
-          child: Container(
-            decoration: BoxDecoration(border: BorderDirectional(start: BorderSide(color: color, width: 4))),
+          child: Padding(
             padding: const EdgeInsets.all(14),
             child: Row(children: [
               IconBadge(icon, color: color, size: 40),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
+                  Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 2),
                   Text(body, style: TextStyle(color: Theme.of(context).hintColor, fontSize: 13)),
                 ]),
               ),
-              if (action != null) const Icon(Icons.open_in_new_rounded, size: 18),
+              if (action != null) Icon(Icons.chevron_right_rounded, color: Theme.of(context).hintColor),
             ]),
           ),
         ),
@@ -302,11 +320,11 @@ class ModuleTile extends StatelessWidget {
             }
           },
           child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              IconBadge(m.icon, color: m.color, size: 42),
-              const Spacer(),
-              Text(context.tr(m.titleKey), maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
+            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+              IconBadge(m.icon, color: m.color, size: 46),
+              const SizedBox(height: 10),
+              Text(context.tr(m.titleKey), maxLines: 2, textAlign: TextAlign.center, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12.5, height: 1.3)),
             ]),
           ),
         ),
@@ -519,18 +537,19 @@ class _HelpCta extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
         child: Container(
           padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(gradient: const LinearGradient(colors: [Palette.navy, Palette.navySoft]), borderRadius: BorderRadius.circular(24)),
+          decoration: BoxDecoration(color: Palette.maroon.withValues(alpha: .06), borderRadius: BorderRadius.circular(22), border: Border.all(color: Palette.maroon.withValues(alpha: .12))),
           child: Row(children: [
-            const Icon(Icons.support_agent_rounded, color: Palette.goldSoft, size: 36),
+            const IconBadge(Icons.support_agent_rounded, size: 48),
             const SizedBox(width: 14),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(context.tr('home.need_help'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16)),
-                Text(context.tr('home.need_help_body'), style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                Text(context.tr('home.need_help'), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                const SizedBox(height: 2),
+                Text(context.tr('home.need_help_body'), style: TextStyle(color: Theme.of(context).hintColor, fontSize: 13)),
               ]),
             ),
             FilledButton(
-              style: FilledButton.styleFrom(backgroundColor: Palette.gold, foregroundColor: Palette.navy, minimumSize: const Size(0, 44)),
+              style: FilledButton.styleFrom(minimumSize: const Size(0, 42), padding: const EdgeInsets.symmetric(horizontal: 18)),
               onPressed: () => context.push('/cases/new'),
               child: Text(context.tr('home.ask')),
             ),
@@ -556,7 +575,7 @@ class _QuickTiles extends StatelessWidget {
         physics: const NeverScrollableScrollPhysics(),
         mainAxisSpacing: 10,
         crossAxisSpacing: 10,
-        childAspectRatio: .95,
+        childAspectRatio: .92,
         children: [for (final (i, m) in tiles.indexed) Reveal(index: i, child: ModuleTile(m: m))],
       ),
     );

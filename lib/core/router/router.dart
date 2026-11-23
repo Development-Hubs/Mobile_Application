@@ -9,6 +9,7 @@ import '../../features/attendance/team_screen.dart';
 import '../../features/auth/gate_screens.dart';
 import '../../features/auth/otp_screen.dart';
 import '../../features/auth/sign_in_screen.dart';
+import '../../features/auth/register_screen.dart';
 import '../../features/calendar/calendar_screen.dart';
 import '../../features/care/care_screen.dart';
 import '../../features/cases/case_detail_screen.dart';
@@ -46,10 +47,10 @@ String? _gate(SessionState s, String loc) {
     case Phase.chooseWorkspace:
       return only('/workspaces');
     case Phase.signedOut:
-      return loc == '/sign-in' || loc == '/otp' ? '' : '/sign-in';
+      return const {'/sign-in', '/otp', '/register'}.contains(loc) ? '' : '/sign-in';
     case Phase.signedIn:
       if (s.me?.isPending ?? false) return only('/pending');
-      const outside = {'/splash', '/connect', '/gate', '/lock', '/workspaces', '/sign-in', '/otp', '/pending'};
+      const outside = {'/splash', '/connect', '/gate', '/lock', '/workspaces', '/sign-in', '/otp', '/register', '/pending'};
       return outside.contains(loc) ? '/home' : '';
   }
 }
@@ -107,9 +108,17 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/otp',
         builder: (c, s) {
           final x = (s.extra as Map?) ?? const {};
-          return OtpScreen(phone: '${x['phone'] ?? ''}', invite: '${x['invite'] ?? ''}', delivery: '${x['delivery'] ?? 'sms'}', ttl: (x['ttl'] as int?) ?? 300);
+          return OtpScreen(
+            phone: '${x['phone'] ?? ''}',
+            invite: '${x['invite'] ?? ''}',
+            delivery: '${x['delivery'] ?? 'sms'}',
+            ttl: (x['ttl'] as int?) ?? 300,
+            registerName: x['registerName'] as String?,
+            registerEmail: (x['registerEmail'] as String?) ?? '',
+          );
         },
       ),
+      GoRoute(path: '/register', builder: (c, s) => const RegisterScreen()),
       GoRoute(path: '/lock', pageBuilder: (c, s) => fade(c, s, const LockScreen())),
       GoRoute(path: '/workspaces', pageBuilder: (c, s) => fade(c, s, const WorkspaceChooser())),
       GoRoute(path: '/pending', pageBuilder: (c, s) => fade(c, s, const PendingScreen())),

@@ -38,9 +38,9 @@ class SettingsScreen extends ConsumerWidget {
             title: Text(context.tr('settings.language')),
             trailing: SegmentedButton<String>(
               showSelectedIcon: false,
-              segments: const [ButtonSegment(value: 'system', label: Text('Auto')), ButtonSegment(value: 'en', label: Text('EN')), ButtonSegment(value: 'ar', label: Text('ع'))],
-              selected: {s.locale ?? 'system'},
-              onSelectionChanged: (v) => ctl.setLocale(v.first == 'system' ? null : v.first),
+              segments: const [ButtonSegment(value: 'ar', label: Text('العربية')), ButtonSegment(value: 'en', label: Text('English'))],
+              selected: {s.locale == 'en' ? 'en' : 'ar'},
+              onSelectionChanged: (v) => ctl.setLocale(v.first),
             ),
           ),
           ListTile(

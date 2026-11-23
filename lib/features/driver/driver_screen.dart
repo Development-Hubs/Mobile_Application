@@ -58,10 +58,14 @@ class _DriverScreenState extends ConsumerState<DriverScreen> {
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 width: 54,
-                decoration: BoxDecoration(color: on ? Palette.goldSoft : Colors.white.withValues(alpha: .14), borderRadius: BorderRadius.circular(16)),
+                decoration: BoxDecoration(
+                  color: on ? Palette.maroon : Theme.of(context).cardTheme.color,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: on ? Palette.maroon : Theme.of(context).dividerColor),
+                ),
                 child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  Text(Fmt.weekday(d, context.lang).characters.take(3).toString(), style: TextStyle(color: on ? Palette.navy : Colors.white70, fontSize: 11, fontWeight: FontWeight.w700)),
-                  Text('${d.day}', style: TextStyle(color: on ? Palette.navy : Colors.white, fontSize: 18, fontWeight: FontWeight.w800)),
+                  Text(Fmt.weekday(d, context.lang).characters.take(3).toString(), style: TextStyle(color: on ? Colors.white70 : Theme.of(context).hintColor, fontSize: 11, fontWeight: FontWeight.w600)),
+                  Text('${d.day}', style: TextStyle(color: on ? Colors.white : Theme.of(context).colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
                 ]),
               ),
             );

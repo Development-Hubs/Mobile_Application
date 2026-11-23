@@ -97,8 +97,8 @@ class _HeaderFigure extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(label, style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w600, fontSize: 12.5)),
-        FittedBox(fit: BoxFit.scaleDown, child: Text(value, style: TextStyle(color: strong ? Palette.goldSoft : Colors.white, fontWeight: FontWeight.w800, fontSize: 22))),
+        Text(label, style: Theme.of(context).textTheme.bodySmall),
+        FittedBox(fit: BoxFit.scaleDown, child: Text(value, style: TextStyle(color: strong ? Palette.maroon : Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w700, fontSize: 22))),
       ]);
 }
 

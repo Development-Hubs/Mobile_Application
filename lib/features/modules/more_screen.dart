@@ -96,8 +96,8 @@ class MoreScreen extends ConsumerWidget {
 
   Widget _tag(String t) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        decoration: BoxDecoration(color: Colors.white.withValues(alpha: .16), borderRadius: BorderRadius.circular(99), border: Border.all(color: Colors.white24)),
-        child: Text(t, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12)),
+        decoration: BoxDecoration(color: Palette.maroon.withValues(alpha: .08), borderRadius: BorderRadius.circular(99)),
+        child: Text(t, style: const TextStyle(color: Palette.maroon, fontWeight: FontWeight.w600, fontSize: 12.5)),
       );
 
   Future<void> _switch(BuildContext context, WidgetRef ref) async {

@@ -260,7 +260,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
           icon: Icons.quiz_rounded,
           bottom: ClipRRect(
             borderRadius: BorderRadius.circular(99),
-            child: LinearProgressIndicator(value: (_index + 1) / qs.length, minHeight: 8, color: Palette.goldSoft, backgroundColor: Colors.white24),
+            child: LinearProgressIndicator(value: (_index + 1) / qs.length, minHeight: 8, color: Palette.maroon, backgroundColor: Palette.maroon.withValues(alpha: .1)),
           ),
         ),
         Expanded(

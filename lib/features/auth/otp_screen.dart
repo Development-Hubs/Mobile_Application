@@ -14,8 +14,12 @@ import 'auth_scaffold.dart';
 
 /// Enter the one-time code. The code is kept in memory only for this screen and never stored.
 class OtpScreen extends ConsumerStatefulWidget {
-  const OtpScreen({super.key, required this.phone, this.invite = '', this.delivery = 'sms', this.ttl = 300});
+  const OtpScreen({super.key, required this.phone, this.invite = '', this.delivery = 'sms', this.ttl = 300, this.registerName, this.registerEmail = ''});
   final String phone;
+
+  /// Set when the person came from the registration screen.
+  final String? registerName;
+  final String registerEmail;
   final String invite;
   final String delivery;
   final int ttl;
@@ -63,7 +67,13 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
     if (_code.text.length < 4) return;
     setState(() => _error = null);
     try {
-      final claim = await ref.read(sessionProvider.notifier).verifyOtp(phone: widget.phone, code: _code.text, name: _name.text.trim(), invitation: widget.invite);
+      final claim = await ref.read(sessionProvider.notifier).verifyOtp(
+            phone: widget.phone,
+            code: _code.text,
+            name: widget.registerName ?? _name.text.trim(),
+            invitation: widget.invite,
+            register: widget.registerName == null ? null : (name: widget.registerName!, email: widget.registerEmail),
+          );
       _code.clear();
       if (mounted && claim == 'pending') Toast.info(context, context.tr('auth.claim_pending'));
     } on ApiException catch (e) {
@@ -107,15 +117,24 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
         const SizedBox(height: 14),
         Center(
           child: _left > 0
-              ? Text(context.tr('auth.resend_in', {'s': _left}), style: TextStyle(color: Theme.of(context).hintColor, fontWeight: FontWeight.w600))
+              ? Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(Icons.schedule_rounded, size: 16, color: Theme.of(context).hintColor),
+                    const SizedBox(width: 6),
+                    Text(context.tr('auth.resend_in', {'s': _left}), style: TextStyle(color: Theme.of(context).hintColor, fontWeight: FontWeight.w500)),
+                  ]),
+                )
               : TextButton.icon(onPressed: _resend, icon: const Icon(Icons.refresh_rounded), label: Text(context.tr('auth.resend'))),
         ),
-        const SizedBox(height: 4),
-        TextButton(
-          onPressed: () => setState(() => _firstTime = !_firstTime),
-          child: Text(context.tr('auth.first_time'), style: const TextStyle(fontWeight: FontWeight.w600)),
-        ),
-        if (_firstTime)
+        if (widget.registerName == null) ...[
+          const SizedBox(height: 4),
+          TextButton(
+            onPressed: () => setState(() => _firstTime = !_firstTime),
+            child: Text(context.tr('auth.first_time'), style: const TextStyle(fontWeight: FontWeight.w600)),
+          ),
+        ],
+        if (_firstTime && widget.registerName == null)
           Reveal(
             child: TextField(
               controller: _name,
@@ -125,7 +144,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
             ),
           ),
         const SizedBox(height: 16),
-        BusyButton(label: context.tr('auth.verify'), icon: Icons.verified_rounded, onPressed: _verify),
+        BusyButton(label: context.tr(widget.registerName == null ? 'auth.verify' : 'auth.register_finish'), onPressed: _verify),
       ]),
     );
   }
@@ -192,19 +211,22 @@ class _CodeBoxesState extends State<_CodeBoxes> {
               children: List.generate(_CodeBoxes.length, (i) {
                 final filled = i < text.length;
                 final active = i == text.length && widget.focus.hasFocus;
-                final color = widget.error ? Palette.danger : (active ? Palette.maroon : (filled ? Palette.gold : (dark ? Colors.white24 : const Color(0x22000000))));
-                return AnimatedContainer(
-                  duration: MotionScope.duration(context, const Duration(milliseconds: 180)),
-                  width: 46,
-                  height: 58,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: dark ? const Color(0xFF142247) : Colors.white,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: color, width: active || filled ? 2 : 1),
-                    boxShadow: active ? [BoxShadow(color: Palette.maroon.withValues(alpha: .2), blurRadius: 12)] : const [],
+                final color = widget.error ? Palette.danger : (active ? Palette.maroon : (filled ? Palette.maroon.withValues(alpha: .35) : (dark ? Colors.white24 : Palette.line)));
+                return Flexible(
+                  child: AnimatedContainer(
+                    duration: MotionScope.duration(context, const Duration(milliseconds: 180)),
+                    constraints: const BoxConstraints(maxWidth: 52),
+                    height: 60,
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: dark ? Palette.nightCard : Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: color, width: active ? 2 : 1.2),
+                      boxShadow: active ? [BoxShadow(color: Palette.maroon.withValues(alpha: .14), blurRadius: 14, spreadRadius: 1)] : const [],
+                    ),
+                    child: Text(filled ? text[i] : '', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700)),
                   ),
-                  child: Text(filled ? text[i] : '', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800)),
                 );
               }),
             ),

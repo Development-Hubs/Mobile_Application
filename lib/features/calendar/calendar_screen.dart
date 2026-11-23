@@ -43,7 +43,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       headerBottom: Row(children: [
         GlassIconButton(icon: Icons.chevron_left_rounded, tooltip: context.tr('previous'), onTap: () => setState(() => _from = _from.subtract(const Duration(days: 30)))),
         const Spacer(),
-        TextButton(onPressed: () => setState(() => _from = DateTime.now()), child: Text(context.tr('today'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800))),
+        TextButton(onPressed: () => setState(() => _from = DateTime.now()), child: Text(context.tr('today'))),
         const Spacer(),
         GlassIconButton(icon: Icons.chevron_right_rounded, tooltip: context.tr('next'), onTap: () => setState(() => _from = _from.add(const Duration(days: 30)))),
       ]),

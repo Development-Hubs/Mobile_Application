@@ -158,16 +158,19 @@ class SessionController extends Notifier<SessionState> {
   // ---- staff --------------------------------------------------------------------------------------------------
 
   /// Throws [ApiException] with code `mfa_required` when a code is needed; the caller repeats with [mfaCode].
-  Future<void> staffLogin({required String company, required String email, required String password, String? mfaCode}) async {
+  /// [company] is optional: the ERP finds the company from the address or the email, and asks for the
+  /// code (field error `company`) only when it cannot.
+  Future<void> staffLogin({String company = '', required String email, required String password, String? mfaCode}) async {
     final r = await _api.post('auth/staff/login', body: {
-      'company': company.trim(),
+      if (company.trim().isNotEmpty) 'company': company.trim(),
       'email': email.trim(),
       'password': password,
       if (mfaCode != null && mfaCode.isNotEmpty) 'mfa_code': mfaCode.trim(),
       'device_name': deviceName,
     });
-    await _store.writeTarget(state.server, company.trim());
-    state = state.copyWith(company: company.trim());
+    final code = company.trim().isNotEmpty ? company.trim() : state.company;
+    await _store.writeTarget(state.server, code);
+    state = state.copyWith(company: code);
     await _adopt(r.map);
     await refreshMe();
   }
@@ -181,7 +184,9 @@ class SessionController extends Notifier<SessionState> {
   }
 
   /// Returns the claim status when an invitation code was used (`pending`, `active`) or null.
-  Future<String?> verifyOtp({required String phone, required String code, String? name, String? invitation}) async {
+  /// With [register], a phone that has no workspace yet is registered as a new customer of this company
+  /// (`auth/register`) before the app opens; the ERP decides whether that is allowed.
+  Future<String?> verifyOtp({required String phone, required String code, String? name, String? invitation, ({String name, String email})? register}) async {
     final r = await _api.post('auth/otp/verify', body: {
       'phone': phone,
       'code': code,
@@ -190,12 +195,42 @@ class SessionController extends Notifier<SessionState> {
       'device_name': deviceName,
     });
     await _adopt(r.map);
-    final workspaces = maps(r.map['workspaces']);
+    var workspaces = maps(r.map['workspaces']);
+    if (register != null && workspaces.isEmpty) {
+      final reg = await _api.post('auth/register', body: {
+        'name': register.name.trim(),
+        if (register.email.trim().isNotEmpty) 'email': register.email.trim(),
+        if (state.company.isNotEmpty) 'company': state.company,
+      });
+      final id = integer(reg.map['membership_id']);
+      if (id != null) {
+        await switchWorkspace(id);
+        _registerPush();
+        return str(reg.map['claim_status']);
+      }
+      workspaces = maps(reg.map['workspaces']);
+    }
     final me = Me((await _api.get('me')).map);
     _registerPush();
     // a chooser only when the phone is linked to more than one company or record
     state = state.copyWith(me: me, phase: workspaces.length > 1 ? Phase.chooseWorkspace : Phase.signedIn);
     return str(r.map['claim_status']);
+  }
+
+  /// Signed in by phone but not linked to anything yet: ask the ERP to register this person as a new customer.
+  Future<String?> registerCustomer({required String name, String email = ''}) async {
+    final reg = await _api.post('auth/register', body: {
+      'name': name.trim(),
+      if (email.trim().isNotEmpty) 'email': email.trim(),
+      if (state.company.isNotEmpty) 'company': state.company,
+    });
+    final id = integer(reg.map['membership_id']);
+    if (id != null) {
+      await switchWorkspace(id);
+    } else {
+      await refreshMe();
+    }
+    return str(reg.map['claim_status']);
   }
 
   Future<String?> claim(String invitation) async {

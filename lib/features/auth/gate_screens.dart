@@ -19,24 +19,27 @@ class SplashScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        backgroundColor: Palette.midnight,
+        backgroundColor: Palette.maroonDeep,
         body: DecoratedBox(
-          decoration: const BoxDecoration(gradient: Palette.nightGradient),
+          decoration: const BoxDecoration(gradient: Palette.heroGradient),
           child: Stack(children: [
-            const Align(alignment: Alignment.bottomCenter, child: DohaSkyline(height: 360)),
+            const Align(alignment: Alignment.bottomCenter, child: SkylineSilhouette(height: 220)),
             Center(
               child: Column(mainAxisSize: MainAxisSize.min, children: [
-                const BrandMark(size: 84),
+                const BrandMark(size: 76),
                 const SizedBox(height: 18),
-                Text.rich(
-                  const TextSpan(children: [
-                    TextSpan(text: 'OneSource ', style: TextStyle(color: Colors.white)),
-                    TextSpan(text: 'Connect', style: TextStyle(color: Palette.gold)),
-                  ]),
-                  style: Theme.of(context).textTheme.headlineMedium,
+                const Directionality(
+                  textDirection: TextDirection.ltr,
+                  child: Text.rich(
+                    TextSpan(children: [
+                      TextSpan(text: 'OneSource ', style: TextStyle(color: Colors.white)),
+                      TextSpan(text: 'Connect', style: TextStyle(color: Palette.goldSoft)),
+                    ]),
+                    style: TextStyle(fontFamily: 'Plex', fontSize: 26, fontWeight: FontWeight.w700),
+                  ),
                 ),
-                const SizedBox(height: 28),
-                const SizedBox(width: 28, height: 28, child: CircularProgressIndicator(strokeWidth: 2.6, color: Palette.goldSoft)),
+                const SizedBox(height: 32),
+                const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.white70)),
               ]),
             ),
           ]),
@@ -122,7 +125,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
           TextField(
             controller: _company,
             textCapitalization: TextCapitalization.characters,
-            decoration: InputDecoration(labelText: context.tr('auth.company_code'), prefixIcon: const Icon(Icons.apartment_rounded)),
+            decoration: InputDecoration(labelText: '${context.tr('auth.company_code')} (${context.tr('common.optional')})', prefixIcon: const Icon(Icons.apartment_outlined)),
           ),
           const SizedBox(height: 20),
           BusyButton(
@@ -272,34 +275,127 @@ class PendingScreen extends ConsumerStatefulWidget {
 
 class _PendingScreenState extends ConsumerState<PendingScreen> {
   final _code = TextEditingController();
+  final _name = TextEditingController();
+  final _email = TextEditingController();
   String? _status;
+  bool _register = false;
+
+  @override
+  void dispose() {
+    for (final c in [_code, _name, _email]) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  Widget _option({required IconData icon, required String title, required String body, required bool open, required VoidCallback onTap, required List<Widget> children}) {
+    final theme = Theme.of(context);
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: theme.cardTheme.color ?? theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: open ? Palette.maroon.withValues(alpha: .35) : theme.dividerColor),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(children: [
+              IconBadge(icon),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(title, style: theme.textTheme.titleSmall),
+                  const SizedBox(height: 2),
+                  Text(body, style: theme.textTheme.bodySmall),
+                ]),
+              ),
+              Icon(open ? Icons.expand_less_rounded : Icons.expand_more_rounded, color: theme.hintColor),
+            ]),
+          ),
+        ),
+        if (open) Padding(padding: const EdgeInsets.fromLTRB(16, 0, 16, 16), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: children)),
+      ]),
+    );
+  }
 
   @override
   Widget build(BuildContext context) => AuthScaffold(
         title: context.tr('pending.title'),
         subtitle: context.tr(_status == 'pending' ? 'auth.claim_pending' : 'pending.body'),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          TextField(
-            controller: _code,
-            textCapitalization: TextCapitalization.characters,
-            decoration: InputDecoration(labelText: context.tr('auth.invite_code'), prefixIcon: const Icon(Icons.confirmation_number_rounded)),
+          _option(
+            icon: Icons.confirmation_number_outlined,
+            title: context.tr('pending.link'),
+            body: context.tr('auth.invite_hint'),
+            open: !_register,
+            onTap: () => setState(() => _register = false),
+            children: [
+              TextField(
+                controller: _code,
+                textCapitalization: TextCapitalization.characters,
+                decoration: InputDecoration(hintText: context.tr('auth.invite_code'), prefixIcon: const Icon(Icons.confirmation_number_outlined)),
+              ),
+              const SizedBox(height: 12),
+              BusyButton(
+                label: context.tr('pending.link'),
+                onPressed: () async {
+                  try {
+                    final st = await ref.read(sessionProvider.notifier).claim(_code.text.trim());
+                    if (mounted) setState(() => _status = st);
+                  } on ApiException catch (e) {
+                    if (context.mounted) Toast.error(context, e);
+                  }
+                },
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
-          BusyButton(
-            label: context.tr('pending.link'),
-            icon: Icons.link_rounded,
-            onPressed: () async {
-              try {
-                final st = await ref.read(sessionProvider.notifier).claim(_code.text.trim());
-                if (mounted) setState(() => _status = st);
-              } on ApiException catch (e) {
-                if (context.mounted) Toast.error(context, e);
-              }
-            },
+          _option(
+            icon: Icons.person_add_alt_1_outlined,
+            title: context.tr('pending.register'),
+            body: context.tr('pending.register_body'),
+            open: _register,
+            onTap: () => setState(() => _register = true),
+            children: [
+              TextField(
+                controller: _name,
+                textCapitalization: TextCapitalization.words,
+                autofillHints: const [AutofillHints.name],
+                decoration: InputDecoration(hintText: context.tr('auth.full_name'), prefixIcon: const Icon(Icons.person_outline_rounded)),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: _email,
+                keyboardType: TextInputType.emailAddress,
+                textDirection: TextDirection.ltr,
+                decoration: InputDecoration(hintText: '${context.tr('auth.email')} (${context.tr('common.optional')})', prefixIcon: const Icon(Icons.alternate_email_rounded)),
+              ),
+              const SizedBox(height: 12),
+              BusyButton(
+                label: context.tr('auth.register_finish'),
+                onPressed: () async {
+                  if (_name.text.trim().length < 2) {
+                    Toast.info(context, context.tr('auth.name_required'));
+                    return;
+                  }
+                  try {
+                    await ref.read(sessionProvider.notifier).registerCustomer(name: _name.text, email: _email.text);
+                  } on ApiException catch (e) {
+                    if (context.mounted) Toast.error(context, e);
+                  }
+                },
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          TextButton.icon(onPressed: () => ref.read(sessionProvider.notifier).refreshMe(), icon: const Icon(Icons.refresh_rounded), label: Text(context.tr('pending.check'))),
-          TextButton(onPressed: () => ref.read(sessionProvider.notifier).signOut(), child: Text(context.tr('settings.sign_out'))),
+          const SizedBox(height: 4),
+          Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            TextButton.icon(onPressed: () => ref.read(sessionProvider.notifier).refreshMe(), icon: const Icon(Icons.refresh_rounded, size: 18), label: Text(context.tr('pending.check'))),
+            TextButton(onPressed: () => ref.read(sessionProvider.notifier).signOut(), child: Text(context.tr('settings.sign_out'))),
+          ]),
         ]),
       );
 }

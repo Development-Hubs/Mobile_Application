@@ -63,20 +63,7 @@ class _CasesScreenState extends ConsumerState<CasesScreen> {
             subtitle: context.tr(me.isStaff ? 'cases.staff_sub' : 'cases.sub'),
             icon: Icons.support_agent_rounded,
             bottom: Column(children: [
-              TextField(
-                controller: _search,
-                textInputAction: TextInputAction.search,
-                onSubmitted: (_) => setState(() => _list = GlobalKey<PagedListState>()),
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  hintText: context.tr('cases.search'),
-                  hintStyle: const TextStyle(color: Colors.white70),
-                  prefixIcon: const Icon(Icons.search_rounded, color: Colors.white70),
-                  fillColor: Colors.white.withValues(alpha: .14),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Colors.white24)),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Palette.goldSoft)),
-                ),
-              ),
+              SearchField(controller: _search, hint: context.tr('cases.search'), onSubmitted: (_) => setState(() => _list = GlobalKey<PagedListState>())),
               const SizedBox(height: 12),
               FilterChips(options: queues, value: queues.containsKey(_queue) ? _queue : queues.keys.first, onChanged: (q) => setState(() {
                     _queue = q;

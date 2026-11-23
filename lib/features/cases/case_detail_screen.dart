@@ -52,7 +52,7 @@ class CaseDetailScreen extends ConsumerWidget {
                   ? null
                   : PopupMenuButton<String>(
                       tooltip: context.tr('actions'),
-                      icon: const Icon(Icons.more_horiz_rounded, color: Colors.white),
+                      icon: const Icon(Icons.more_horiz_rounded),
                       onSelected: (a) => _action(context, ref, a),
                       itemBuilder: (_) => [for (final a in actions) PopupMenuItem(value: a, child: Text(context.tr('cases.action.$a')))],
                     ),
@@ -86,8 +86,8 @@ class CaseDetailScreen extends ConsumerWidget {
 
   Widget _pill(String t) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(color: Colors.white.withValues(alpha: .16), borderRadius: BorderRadius.circular(99)),
-        child: Text(t, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12)),
+        decoration: BoxDecoration(color: Palette.ink.withValues(alpha: .06), borderRadius: BorderRadius.circular(99)),
+        child: Text(t, style: const TextStyle(color: Palette.ink2, fontWeight: FontWeight.w600, fontSize: 12)),
       );
 
   Future<void> _action(BuildContext context, WidgetRef ref, String action) async {

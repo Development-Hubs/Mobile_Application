@@ -8,7 +8,7 @@ enum MotionPref { system, reduced, full }
 class AppSettings {
   const AppSettings({this.locale, this.themeMode = ThemeMode.system, this.motion = MotionPref.system, this.biometrics = false});
 
-  /// null → follow the device language (Arabic if the device is Arabic, otherwise English).
+  /// 'ar' (default) or 'en'.
   final String? locale;
   final ThemeMode themeMode;
   final MotionPref motion;
@@ -29,7 +29,7 @@ class SettingsController extends Notifier<AppSettings> {
 
   @override
   AppSettings build() => AppSettings(
-        locale: _p.getString('locale'),
+        locale: _p.getString('locale') ?? 'ar', // Arabic first; the person can switch to English
         themeMode: ThemeMode.values.byName(_p.getString('theme') ?? 'system'),
         motion: MotionPref.values.byName(_p.getString('motion') ?? 'system'),
         biometrics: _p.getBool('biometrics') ?? false,

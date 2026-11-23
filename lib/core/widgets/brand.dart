@@ -14,7 +14,7 @@ class BrandMark extends StatelessWidget {
         child: DecoratedBox(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(size * .25),
-            boxShadow: [BoxShadow(color: Palette.maroon.withValues(alpha: .45), blurRadius: size * .4, offset: Offset(0, size * .12))],
+            boxShadow: [BoxShadow(color: Palette.maroon.withValues(alpha: .25), blurRadius: size * .3, offset: Offset(0, size * .08))],
           ),
           child: CustomPaint(painter: _MarkPainter()),
         ),
@@ -58,18 +58,26 @@ class BrandLockup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = light ? Colors.white : Palette.navy;
-    return Row(mainAxisSize: MainAxisSize.min, children: [
-      const BrandMark(size: 44),
-      const SizedBox(width: 12),
-      Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-        Text.rich(TextSpan(children: [
-          TextSpan(text: 'OneSource ', style: TextStyle(color: color, fontWeight: FontWeight.w800, fontSize: 20, letterSpacing: -.4)),
-          const TextSpan(text: 'Connect', style: TextStyle(color: Palette.gold, fontWeight: FontWeight.w800, fontSize: 20, letterSpacing: -.4)),
-        ])),
-        if (subtitle != null) Text(subtitle!, style: TextStyle(color: color.withValues(alpha: .7), fontSize: 12, fontWeight: FontWeight.w600)),
+    final color = light ? Colors.white : Palette.ink;
+    // the product name is a Latin wordmark: always left-to-right, also in Arabic
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Container(
+          padding: const EdgeInsets.all(2),
+          decoration: BoxDecoration(color: light ? Colors.white : Colors.transparent, borderRadius: BorderRadius.circular(12)),
+          child: const BrandMark(size: 36),
+        ),
+        const SizedBox(width: 10),
+        Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+          Text.rich(TextSpan(children: [
+            TextSpan(text: 'OneSource ', style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 18)),
+            TextSpan(text: 'Connect', style: TextStyle(color: light ? Palette.goldSoft : Palette.maroon, fontWeight: FontWeight.w700, fontSize: 18)),
+          ])),
+          if (subtitle != null) Text(subtitle!, style: TextStyle(color: color.withValues(alpha: .7), fontSize: 12, fontWeight: FontWeight.w500)),
+        ]),
       ]),
-    ]);
+    );
   }
 }
 

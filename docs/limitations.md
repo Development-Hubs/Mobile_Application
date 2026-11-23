@@ -30,3 +30,9 @@ Everything below is prepared in the repository; only your own accounts and keys 
 
 * The Doha skyline, dhow and patterns are generated artwork drawn in code (`DohaSkyline`). They are not photographs or third-party images.
 * Biometric unlock only unlocks the token already on the phone. The app never takes selfies or face photos, and never stores face templates.
+
+## Registration and sign-in without a company code
+
+* Customer registration (`POST /api/mobile/v1/auth/register`) and staff sign-in without a company code need the ERP changes in chatbot PR #255 (on top of #253 and #254). Until those are deployed, staff sign-in shows the *Company code* field when the server asks for it, and registration answers with the ERP's error instead of pretending to succeed.
+* A registered customer starts as a **prospect** customer file. What they can open in the app is still decided by the ERP's permissions for that membership.
+* When the app talks to the shared address (not `<company>.onesourceerp.com`) and no `COMPANY_CODE` is set, the ERP cannot tell which company a new customer belongs to and answers `company_required`.

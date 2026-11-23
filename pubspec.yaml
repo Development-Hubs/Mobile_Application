@@ -51,12 +51,13 @@ flutter_launcher_icons:
 flutter:
   uses-material-design: true
   fonts:
-    - family: Inter
+    # IBM Plex Sans Arabic (SIL Open Font License, assets/fonts/OFL-IBMPlexSansArabic.txt): Arabic and Latin in one family
+    - family: Plex
       fonts:
-        - asset: assets/fonts/Inter-Regular.ttf
-        - asset: assets/fonts/Inter-SemiBold.ttf
+        - asset: assets/fonts/IBMPlexSansArabic-Regular.ttf
+        - asset: assets/fonts/IBMPlexSansArabic-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/IBMPlexSansArabic-SemiBold.ttf
           weight: 600
-        - asset: assets/fonts/Inter-Bold.ttf
+        - asset: assets/fonts/IBMPlexSansArabic-Bold.ttf
           weight: 700
-        - asset: assets/fonts/Inter-ExtraBold.ttf
-          weight: 800

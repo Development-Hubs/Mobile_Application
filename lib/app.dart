@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
@@ -81,8 +80,7 @@ class _OneSourceAppState extends ConsumerState<OneSourceApp> with WidgetsBinding
   }
 
   Locale _locale(String? chosen) {
-    if (chosen != null) return Locale(chosen);
-    return Platform.localeName.toLowerCase().startsWith('ar') ? const Locale('ar') : const Locale('en');
+    return Locale(chosen == 'en' ? 'en' : 'ar');
   }
 
   @override

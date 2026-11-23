@@ -11,12 +11,46 @@ import '../theme/palette.dart';
 import '../util/format.dart';
 
 // ---------------------------------------------------------------------------------------------------------------
+// Tone: widgets inside a header know whether they sit on the light canvas or on a maroon surface.
+// ---------------------------------------------------------------------------------------------------------------
+
+class HeaderTone extends InheritedWidget {
+  const HeaderTone({super.key, required this.onBrand, required super.child});
+
+  /// true on a maroon surface (white content), false on the light canvas.
+  final bool onBrand;
+
+  static bool onBrandOf(BuildContext context) => context.dependOnInheritedWidgetOfExactType<HeaderTone>()?.onBrand ?? false;
+
+  @override
+  bool updateShouldNotify(HeaderTone old) => old.onBrand != onBrand;
+}
+
+/// Colours for text and controls that sit inside a header.
+class Tone {
+  Tone._(this.fg, this.fg2, this.control, this.controlLine);
+  final Color fg, fg2, control, controlLine;
+
+  static Tone of(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    if (HeaderTone.onBrandOf(context)) return Tone._(Colors.white, Colors.white70, Colors.white.withValues(alpha: .14), Colors.white24);
+    return Tone._(
+      dark ? Colors.white : Palette.ink,
+      dark ? const Color(0xFFAAB1C0) : Palette.ink2,
+      dark ? Palette.nightCard : Colors.white,
+      dark ? Palette.nightLine : Palette.line,
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------------------------------------------
 // Headers and surfaces
 // ---------------------------------------------------------------------------------------------------------------
 
-/// A large gradient header with a soft pattern, used at the top of every module.
+/// Page header: a large title on the canvas with an optional icon, actions and a bottom slot (filters, search).
+/// [brand] switches to a maroon surface for the few places that need emphasis.
 class HeroHeader extends StatelessWidget {
-  const HeroHeader({super.key, required this.title, this.subtitle, this.icon, this.trailing, this.bottom, this.gradient = Palette.heroGradient});
+  const HeroHeader({super.key, required this.title, this.subtitle, this.icon, this.trailing, this.bottom, this.gradient = Palette.heroGradient, this.brand = false});
 
   final String title;
   final String? subtitle;
@@ -24,90 +58,66 @@ class HeroHeader extends StatelessWidget {
   final Widget? trailing;
   final Widget? bottom;
   final Gradient gradient;
+  final bool brand;
 
   @override
   Widget build(BuildContext context) {
     final top = MediaQuery.paddingOf(context).top;
-    return Container(
-      decoration: BoxDecoration(
-        gradient: gradient,
-        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
-        boxShadow: [BoxShadow(color: Palette.maroon.withValues(alpha: .25), blurRadius: 30, offset: const Offset(0, 12))],
-      ),
-      child: Stack(children: [
-        Positioned.fill(child: ClipRRect(borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)), child: CustomPaint(painter: _ArabesquePainter()))),
-        Padding(
-          padding: EdgeInsets.fromLTRB(20, top + 12, 20, 22),
+    final canPop = Navigator.of(context).canPop();
+    return HeaderTone(
+      onBrand: brand,
+      child: Builder(builder: (context) {
+        final tone = Tone.of(context);
+        final content = Padding(
+          padding: EdgeInsets.fromLTRB(20, top + 8, 20, bottom == null ? 6 : 14),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            if (canPop || trailing != null)
+              SizedBox(
+                height: 44,
+                child: Row(children: [
+                  if (canPop) GlassIconButton(icon: Icons.arrow_back_rounded, onTap: () => Navigator.of(context).maybePop(), tooltip: context.tr('back')),
+                  const Spacer(),
+                  if (trailing != null) trailing!,
+                ]),
+              ),
+            SizedBox(height: canPop || trailing != null ? 14 : 10),
             Row(children: [
-              if (Navigator.of(context).canPop())
-                Padding(
-                  padding: const EdgeInsetsDirectional.only(end: 8),
-                  child: GlassIconButton(icon: Icons.arrow_back_rounded, onTap: () => Navigator.of(context).maybePop(), tooltip: context.tr('back')),
-                ),
-              const Spacer(),
-              if (trailing != null) trailing!,
-            ]),
-            const SizedBox(height: 14),
-            Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
               if (icon != null) ...[
                 Container(
-                  width: 52,
-                  height: 52,
-                  decoration: BoxDecoration(color: Colors.white.withValues(alpha: .14), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white24)),
-                  child: Icon(icon, color: Palette.goldSoft, size: 26),
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    color: brand ? Colors.white.withValues(alpha: .14) : Palette.maroon.withValues(alpha: .08),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Icon(icon, color: brand ? Palette.goldSoft : Palette.maroon, size: 24),
                 ),
                 const SizedBox(width: 14),
               ],
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(title, style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: Colors.white)),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 4),
-                    Text(subtitle!, style: TextStyle(color: Colors.white.withValues(alpha: .78), fontWeight: FontWeight.w500)),
+                  Text(title, maxLines: 2, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: tone.fg)),
+                  if (subtitle != null && subtitle!.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(subtitle!, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: tone.fg2, fontSize: 14)),
                   ],
                 ]),
               ),
             ]),
-            if (bottom != null) ...[const SizedBox(height: 18), bottom!],
+            if (bottom != null) ...[const SizedBox(height: 16), bottom!],
           ]),
-        ),
-      ]),
+        );
+        if (!brand) return content;
+        return DecoratedBox(
+          decoration: BoxDecoration(gradient: gradient, borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28))),
+          child: content,
+        );
+      }),
     );
   }
 }
 
-/// Eight-point star lattice drawn faintly over headers (generated pattern).
-class _ArabesquePainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final p = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1
-      ..color = Colors.white.withValues(alpha: .06);
-    const step = 44.0;
-    for (var y = -step; y < size.height + step; y += step) {
-      for (var x = -step; x < size.width + step; x += step) {
-        final c = Offset(x + (y ~/ step).isOdd.toDouble() * step / 2, y);
-        final r = step * .32;
-        canvas.drawRect(Rect.fromCenter(center: c, width: r * 2, height: r * 2), p);
-        canvas.save();
-        canvas.translate(c.dx, c.dy);
-        canvas.rotate(.785398);
-        canvas.drawRect(Rect.fromCenter(center: Offset.zero, width: r * 2, height: r * 2), p);
-        canvas.restore();
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-extension on bool {
-  double toDouble() => this ? 1 : 0;
-}
-
+/// A round icon button that adapts to where it sits (canvas or maroon surface).
 class GlassIconButton extends StatelessWidget {
   const GlassIconButton({super.key, required this.icon, required this.onTap, this.tooltip, this.badge = 0});
   final IconData icon;
@@ -116,41 +126,40 @@ class GlassIconButton extends StatelessWidget {
   final int badge;
 
   @override
-  Widget build(BuildContext context) => Tooltip(
-        message: tooltip ?? '',
-        child: Semantics(
-          button: true,
-          label: tooltip,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(14),
-            onTap: () {
-              HapticFeedback.selectionClick();
-              onTap();
-            },
-            child: Badge(
-              isLabelVisible: badge > 0,
-              label: Text(badge > 99 ? '99+' : '$badge'),
-              backgroundColor: Palette.gold,
-              textColor: Palette.navy,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(14),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                  child: Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(color: Colors.white.withValues(alpha: .14), borderRadius: BorderRadius.circular(14), border: Border.all(color: Colors.white24)),
-                    child: Icon(icon, color: Colors.white, size: 22),
-                  ),
-                ),
-              ),
-            ),
+  Widget build(BuildContext context) {
+    final tone = Tone.of(context);
+    final onBrand = HeaderTone.onBrandOf(context);
+    final button = Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(color: tone.control, shape: BoxShape.circle, border: Border.all(color: tone.controlLine)),
+      child: Icon(icon, color: tone.fg, size: 21),
+    );
+    return Tooltip(
+      message: tooltip ?? '',
+      child: Semantics(
+        button: true,
+        label: tooltip,
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: () {
+            HapticFeedback.selectionClick();
+            onTap();
+          },
+          child: Badge(
+            isLabelVisible: badge > 0,
+            label: Text(badge > 99 ? '99+' : '$badge'),
+            backgroundColor: onBrand ? Palette.gold : Palette.maroon,
+            textColor: Colors.white,
+            child: onBrand ? ClipOval(child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10), child: button)) : button,
           ),
         ),
-      );
+      ),
+    );
+  }
 }
 
-/// A frosted card for content placed on top of gradients and the skyline.
+/// A raised white panel (sign-in sheet, dialogs on brand surfaces).
 class GlassCard extends StatelessWidget {
   const GlassCard({super.key, required this.child, this.padding = const EdgeInsets.all(20), this.radius = 24});
   final Widget child;
@@ -160,27 +169,21 @@ class GlassCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(radius),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
-        child: Container(
-          padding: padding,
-          decoration: BoxDecoration(
-            color: dark ? const Color(0xCC0C1630) : Colors.white.withValues(alpha: .9),
-            borderRadius: BorderRadius.circular(radius),
-            border: Border.all(color: dark ? Colors.white12 : Colors.white),
-          ),
-          child: child,
-        ),
+    return Container(
+      padding: padding,
+      decoration: BoxDecoration(
+        color: dark ? Palette.nightCard : Colors.white,
+        borderRadius: BorderRadius.circular(radius),
+        boxShadow: [BoxShadow(color: Palette.ink.withValues(alpha: dark ? .3 : .08), blurRadius: 30, offset: const Offset(0, 12))],
       ),
+      child: child,
     );
   }
 }
 
-/// A white rounded section with an optional title row.
+/// A card with an optional title row.
 class Section extends StatelessWidget {
-  const Section({super.key, this.title, this.icon, this.action, required this.child, this.padding = const EdgeInsets.all(16)});
+  const Section({super.key, this.title, this.icon, this.action, required this.child, this.padding = const EdgeInsets.all(18)});
   final String? title;
   final IconData? icon;
   final Widget? action;
@@ -188,28 +191,41 @@ class Section extends StatelessWidget {
   final EdgeInsets padding;
 
   @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Card(
-      child: Padding(
-        padding: padding,
-        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          if (title != null) ...[
-            Row(children: [
-              if (icon != null) ...[Icon(icon, size: 18, color: scheme.primary), const SizedBox(width: 8)],
-              Expanded(child: Text(title!, style: Theme.of(context).textTheme.titleMedium)),
-              if (action != null) action!,
-            ]),
-            const SizedBox(height: 12),
-          ],
-          child,
-        ]),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Card(
+        child: Padding(
+          padding: padding,
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            if (title != null) ...[
+              Row(children: [
+                if (icon != null) ...[Icon(icon, size: 19, color: Palette.maroon), const SizedBox(width: 8)],
+                Expanded(child: Text(title!, style: Theme.of(context).textTheme.titleMedium)),
+                if (action != null) action!,
+              ]),
+              const SizedBox(height: 12),
+            ],
+            child,
+          ]),
+        ),
+      );
 }
 
-/// A small coloured pill for a status word.
+/// A small heading above a group of cards.
+class GroupLabel extends StatelessWidget {
+  const GroupLabel(this.text, {super.key, this.action});
+  final String text;
+  final Widget? action;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.fromLTRB(22, 20, 14, 8),
+        child: Row(children: [
+          Expanded(child: Text(text, style: Theme.of(context).textTheme.titleMedium)),
+          if (action != null) action!,
+        ]),
+      );
+}
+
+/// A soft coloured pill for a status word.
 class StatusChip extends StatelessWidget {
   const StatusChip(this.status, {super.key, this.label});
   final String? status;
@@ -220,17 +236,13 @@ class StatusChip extends StatelessWidget {
     final c = Palette.forStatus(status);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(color: c.withValues(alpha: .12), borderRadius: BorderRadius.circular(99), border: Border.all(color: c.withValues(alpha: .25))),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Container(width: 6, height: 6, decoration: BoxDecoration(color: c, shape: BoxShape.circle)),
-        const SizedBox(width: 6),
-        Text(label ?? statusLabel(context, status), style: TextStyle(color: c, fontWeight: FontWeight.w700, fontSize: 12)),
-      ]),
+      decoration: BoxDecoration(color: c.withValues(alpha: .1), borderRadius: BorderRadius.circular(99)),
+      child: Text(label ?? statusLabel(context, status), style: TextStyle(color: c, fontWeight: FontWeight.w600, fontSize: 12)),
     );
   }
 }
 
-/// Coloured round icon used in tiles.
+/// Tinted rounded square with an icon.
 class IconBadge extends StatelessWidget {
   const IconBadge(this.icon, {super.key, this.color = Palette.maroon, this.size = 44});
   final IconData icon;
@@ -241,15 +253,12 @@ class IconBadge extends StatelessWidget {
   Widget build(BuildContext context) => Container(
         width: size,
         height: size,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(colors: [color.withValues(alpha: .18), color.withValues(alpha: .08)], begin: Alignment.topLeft, end: Alignment.bottomRight),
-          borderRadius: BorderRadius.circular(size * .32),
-        ),
+        decoration: BoxDecoration(color: color.withValues(alpha: .1), borderRadius: BorderRadius.circular(size * .3)),
         child: Icon(icon, color: color, size: size * .5),
       );
 }
 
-/// Big number with a label, for dashboards.
+/// Number + label tile for dashboards.
 class StatTile extends StatelessWidget {
   const StatTile({super.key, required this.label, required this.value, required this.icon, this.color = Palette.maroon, this.onTap});
   final String label;
@@ -264,20 +273,23 @@ class StatTile extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(16),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              IconBadge(icon, color: color, size: 38),
-              const SizedBox(height: 12),
+              Row(children: [
+                IconBadge(icon, color: color, size: 36),
+                const Spacer(),
+                if (onTap != null) Icon(Icons.arrow_forward_rounded, size: 18, color: Theme.of(context).hintColor),
+              ]),
+              const SizedBox(height: 14),
               CountUp(value: value, style: Theme.of(context).textTheme.headlineSmall),
-              const SizedBox(height: 2),
-              Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: Theme.of(context).hintColor, fontWeight: FontWeight.w600, fontSize: 12.5)),
+              Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodySmall),
             ]),
           ),
         ),
       );
 }
 
-/// Animates an integer text from zero once (falls back to plain text for non-numbers or reduced motion).
+/// Counts an integer up once (plain text for non-numbers or reduced motion).
 class CountUp extends StatelessWidget {
   const CountUp({super.key, required this.value, this.style});
   final String value;
@@ -289,7 +301,7 @@ class CountUp extends StatelessWidget {
     if (n == null || MotionScope.reducedOf(context)) return Text(value, style: style);
     return TweenAnimationBuilder<double>(
       tween: Tween<double>(begin: 0, end: n.toDouble()),
-      duration: const Duration(milliseconds: 900),
+      duration: const Duration(milliseconds: 800),
       curve: Curves.easeOutCubic,
       builder: (_, v, __) => Text('${v.round()}', style: style),
     );
@@ -300,12 +312,14 @@ class CountUp extends StatelessWidget {
 // Buttons and feedback
 // ---------------------------------------------------------------------------------------------------------------
 
-/// A filled button that shows progress and blocks double taps while [onPressed] runs.
+/// Primary button that shows progress and blocks double taps while [onPressed] runs.
 class BusyButton extends StatefulWidget {
   const BusyButton({super.key, required this.label, required this.onPressed, this.icon, this.gradient = Palette.heroGradient, this.outlined = false});
   final String label;
   final Future<void> Function()? onPressed;
   final IconData? icon;
+
+  /// The button uses one solid colour taken from this (maroon by default).
   final Gradient gradient;
   final bool outlined;
 
@@ -327,44 +341,37 @@ class _BusyButtonState extends State<BusyButton> {
     }
   }
 
+  Color get _color {
+    if (identical(widget.gradient, Palette.heroGradient)) return Palette.maroon;
+    if (identical(widget.gradient, Palette.goldGradient)) return Palette.gold;
+    final g = widget.gradient;
+    return g is LinearGradient ? g.colors.last : Palette.maroon;
+  }
+
   @override
   Widget build(BuildContext context) {
     final enabled = widget.onPressed != null && !_busy;
+    final fg = widget.outlined ? Theme.of(context).colorScheme.onSurface : Colors.white;
     final content = AnimatedSwitcher(
-      duration: MotionScope.duration(context, const Duration(milliseconds: 200)),
+      duration: MotionScope.duration(context, const Duration(milliseconds: 180)),
       child: _busy
-          ? const SizedBox(key: ValueKey('b'), width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.white))
+          ? SizedBox(key: const ValueKey('b'), width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.4, color: fg))
           : Row(key: const ValueKey('l'), mainAxisSize: MainAxisSize.min, children: [
-              if (widget.icon != null) ...[Icon(widget.icon, size: 20), const SizedBox(width: 10)],
-              Flexible(child: Text(widget.label, overflow: TextOverflow.ellipsis)),
+              if (widget.icon != null) ...[Icon(widget.icon, size: 20, color: fg), const SizedBox(width: 10)],
+              Flexible(child: Text(widget.label, overflow: TextOverflow.ellipsis, style: TextStyle(color: fg, fontWeight: FontWeight.w600, fontSize: 16))),
             ]),
     );
     if (widget.outlined) {
       return OutlinedButton(onPressed: enabled ? _run : null, child: content);
     }
-    return Semantics(
-      button: true,
-      enabled: enabled,
-      label: widget.label,
-      child: AnimatedOpacity(
-        opacity: enabled || _busy ? 1 : .45,
-        duration: const Duration(milliseconds: 150),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: widget.gradient,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: enabled ? [BoxShadow(color: Palette.maroon.withValues(alpha: .35), blurRadius: 18, offset: const Offset(0, 8))] : const [],
-          ),
-          child: Material(
-            type: MaterialType.transparency,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(16),
-              onTap: enabled ? _run : null,
-              child: SizedBox(height: 54, child: Center(child: DefaultTextStyle.merge(style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16), child: IconTheme.merge(data: const IconThemeData(color: Colors.white), child: content)))),
-            ),
-          ),
-        ),
+    return FilledButton(
+      style: FilledButton.styleFrom(
+        backgroundColor: _color,
+        disabledBackgroundColor: _color.withValues(alpha: _busy ? 1 : .35),
+        minimumSize: const Size.fromHeight(54),
       ),
+      onPressed: enabled ? _run : (_busy ? () {} : null),
+      child: content,
     );
   }
 }
@@ -375,7 +382,7 @@ class Toast {
   static void success(BuildContext context, String message) => _show(context, message, Palette.success, Icons.check_circle_rounded);
   static void error(BuildContext context, Object error) =>
       _show(context, error is ApiException ? error.message : context.tr('error.generic'), Palette.danger, error is ApiException && error.isOffline ? Icons.wifi_off_rounded : Icons.error_rounded);
-  static void info(BuildContext context, String message) => _show(context, message, Palette.navySoft, Icons.info_rounded);
+  static void info(BuildContext context, String message) => _show(context, message, Palette.ink, Icons.info_rounded);
 
   static void _show(BuildContext context, String message, Color color, IconData icon) {
     final m = ScaffoldMessenger.maybeOf(context);
@@ -383,30 +390,30 @@ class Toast {
     m.hideCurrentSnackBar();
     m.showSnackBar(SnackBar(
       backgroundColor: color,
-      content: Row(children: [Icon(icon, color: Colors.white), const SizedBox(width: 12), Expanded(child: Text(message, style: const TextStyle(fontWeight: FontWeight.w600)))]),
+      content: Row(children: [Icon(icon, color: Colors.white, size: 20), const SizedBox(width: 12), Expanded(child: Text(message, style: const TextStyle(fontWeight: FontWeight.w500)))]),
     ));
   }
 }
 
 /// Asks before a consequential action. Returns true only when the person confirms.
-Future<bool> confirmAction(BuildContext context, {required String title, String? message, String? confirm, bool danger = false, IconData icon = Icons.help_rounded}) async {
+Future<bool> confirmAction(BuildContext context, {required String title, String? message, String? confirm, bool danger = false, IconData icon = Icons.help_outline_rounded}) async {
   final ok = await showModalBottomSheet<bool>(
     context: context,
     useSafeArea: true,
     builder: (context) => Padding(
       padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
-        IconBadge(icon, color: danger ? Palette.danger : Palette.maroon, size: 64),
+        IconBadge(icon, color: danger ? Palette.danger : Palette.maroon, size: 58),
         const SizedBox(height: 16),
         Text(title, textAlign: TextAlign.center, style: Theme.of(context).textTheme.titleLarge),
-        if (message != null) ...[const SizedBox(height: 8), Text(message, textAlign: TextAlign.center, style: TextStyle(color: Theme.of(context).hintColor))],
+        if (message != null) ...[const SizedBox(height: 8), Text(message, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).hintColor))],
         const SizedBox(height: 24),
         Row(children: [
           Expanded(child: OutlinedButton(onPressed: () => Navigator.pop(context, false), child: Text(context.tr('cancel')))),
           const SizedBox(width: 12),
           Expanded(
             child: FilledButton(
-              style: FilledButton.styleFrom(backgroundColor: danger ? Palette.danger : Palette.maroon, minimumSize: const Size.fromHeight(50)),
+              style: FilledButton.styleFrom(backgroundColor: danger ? Palette.danger : Palette.maroon, minimumSize: const Size.fromHeight(52)),
               onPressed: () => Navigator.pop(context, true),
               child: Text(confirm ?? context.tr('confirm')),
             ),
@@ -431,7 +438,7 @@ Future<String?> askText(BuildContext context, {required String title, String? hi
         builder: (context, set) => Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Text(title, style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 16),
-          TextField(controller: c, autofocus: true, maxLines: maxLines, decoration: InputDecoration(hintText: hint), onChanged: (_) => set(() {})),
+          TextField(controller: c, autofocus: true, maxLines: maxLines, minLines: 1, decoration: InputDecoration(hintText: hint), onChanged: (_) => set(() {})),
           const SizedBox(height: 16),
           FilledButton(onPressed: required && c.text.trim().isEmpty ? null : () => Navigator.pop(context, c.text.trim()), child: Text(context.tr('continue'))),
         ]),
@@ -474,8 +481,8 @@ class _ShimmerState extends State<Shimmer> with SingleTickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
-    final base = dark ? const Color(0xFF16223F) : const Color(0xFFEAE4D8);
-    final hi = dark ? const Color(0xFF223159) : const Color(0xFFF8F4EC);
+    final base = dark ? const Color(0xFF1B2130) : const Color(0xFFECE8E3);
+    final hi = dark ? const Color(0xFF262D3F) : const Color(0xFFF7F5F2);
     return AnimatedBuilder(
       animation: _c,
       child: widget.child,
@@ -484,8 +491,8 @@ class _ShimmerState extends State<Shimmer> with SingleTickerProviderStateMixin {
         shaderCallback: (r) => LinearGradient(
           colors: [base, hi, base],
           stops: const [.25, .5, .75],
-          begin: Alignment(-1 - 2 + _c.value * 4, 0),
-          end: Alignment(1 - 2 + _c.value * 4, 0),
+          begin: Alignment(-3 + _c.value * 4, 0),
+          end: Alignment(-1 + _c.value * 4, 0),
         ).createShader(r),
         child: child,
       ),
@@ -505,11 +512,8 @@ class SkeletonList extends StatelessWidget {
             children: List.generate(
               count,
               (i) => Padding(
-                padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
-                child: Container(
-                  height: 78,
-                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
-                ),
+                padding: const EdgeInsets.fromLTRB(16, 5, 16, 5),
+                child: Container(height: 76, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18))),
               ),
             ),
           ),
@@ -518,7 +522,7 @@ class SkeletonList extends StatelessWidget {
 }
 
 class EmptyView extends StatelessWidget {
-  const EmptyView({super.key, required this.title, this.message, this.icon = Icons.inbox_rounded, this.action});
+  const EmptyView({super.key, required this.title, this.message, this.icon = Icons.inbox_outlined, this.action});
   final String title;
   final String? message;
   final IconData icon;
@@ -526,17 +530,17 @@ class EmptyView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 48),
+        padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 48),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Container(
-            width: 96,
-            height: 96,
-            decoration: BoxDecoration(shape: BoxShape.circle, gradient: LinearGradient(colors: [Palette.gold.withValues(alpha: .25), Palette.maroon.withValues(alpha: .12)])),
-            child: Icon(icon, size: 44, color: Palette.maroon),
+            width: 76,
+            height: 76,
+            decoration: BoxDecoration(shape: BoxShape.circle, color: Palette.maroon.withValues(alpha: .07)),
+            child: Icon(icon, size: 34, color: Palette.maroon),
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 16),
           Text(title, textAlign: TextAlign.center, style: Theme.of(context).textTheme.titleMedium),
-          if (message != null) ...[const SizedBox(height: 6), Text(message!, textAlign: TextAlign.center, style: TextStyle(color: Theme.of(context).hintColor))],
+          if (message != null) ...[const SizedBox(height: 6), Text(message!, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodySmall)],
           if (action != null) ...[const SizedBox(height: 18), action!],
         ]),
       );
@@ -580,9 +584,9 @@ class AsyncBody<T> extends StatelessWidget {
       );
 }
 
-/// Standard module page: gradient header + pull-to-refresh body.
+/// Standard module page: header + pull-to-refresh body.
 class ModulePage extends StatelessWidget {
-  const ModulePage({super.key, required this.title, this.subtitle, this.icon, this.trailing, this.headerBottom, required this.children, this.onRefresh, this.fab});
+  const ModulePage({super.key, required this.title, this.subtitle, this.icon, this.trailing, this.headerBottom, required this.children, this.onRefresh, this.fab, this.brand = false});
   final String title;
   final String? subtitle;
   final IconData? icon;
@@ -591,6 +595,7 @@ class ModulePage extends StatelessWidget {
   final List<Widget> children;
   final Future<void> Function()? onRefresh;
   final Widget? fab;
+  final bool brand;
 
   @override
   Widget build(BuildContext context) {
@@ -598,8 +603,8 @@ class ModulePage extends StatelessWidget {
       padding: EdgeInsets.zero,
       physics: const AlwaysScrollableScrollPhysics(),
       children: [
-        HeroHeader(title: title, subtitle: subtitle, icon: icon, trailing: trailing, bottom: headerBottom),
-        const SizedBox(height: 12),
+        HeroHeader(title: title, subtitle: subtitle, icon: icon, trailing: trailing, bottom: headerBottom, brand: brand),
+        const SizedBox(height: 8),
         ...children,
         const SizedBox(height: 120),
       ],
@@ -624,20 +629,27 @@ class ListRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         child: Card(
           clipBehavior: Clip.antiAlias,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18), side: BorderSide(color: Theme.of(context).dividerColor)),
           child: InkWell(
             onTap: onTap,
             child: Padding(
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
               child: Row(children: [
-                if (icon != null) ...[IconBadge(icon!, color: iconColor), const SizedBox(width: 14)],
+                if (icon != null) ...[IconBadge(icon!, color: iconColor, size: 42), const SizedBox(width: 13)],
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(title, maxLines: 2, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
-                    if (subtitle != null) ...[const SizedBox(height: 3), Text(subtitle!, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: Theme.of(context).hintColor, fontSize: 13))],
-                    if (meta != null) ...[const SizedBox(height: 6), Text(meta!, style: TextStyle(color: Theme.of(context).hintColor, fontSize: 11.5, fontWeight: FontWeight.w600))],
+                    Text(title, maxLines: 2, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.titleSmall),
+                    if (subtitle != null && subtitle!.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(subtitle!, maxLines: 2, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 13)),
+                    ],
+                    if (meta != null && meta!.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(meta!, style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11.5)),
+                    ],
                   ]),
                 ),
                 if (trailing != null) ...[const SizedBox(width: 10), trailing!],
@@ -649,35 +661,66 @@ class ListRow extends StatelessWidget {
       );
 }
 
-/// Horizontal filter chips (queues, tabs).
+/// Horizontal filter pills (queues, tabs). Adapts to the canvas or a maroon header.
 class FilterChips extends StatelessWidget {
-  const FilterChips({super.key, required this.options, required this.value, required this.onChanged, this.onDark = true});
+  const FilterChips({super.key, required this.options, required this.value, required this.onChanged, this.onDark});
   final Map<String, String> options;
   final String value;
   final ValueChanged<String> onChanged;
-  final bool onDark;
+
+  /// Leave null to follow the surrounding header.
+  final bool? onDark;
 
   @override
-  Widget build(BuildContext context) => SizedBox(
-        height: 40,
-        child: ListView(
-          scrollDirection: Axis.horizontal,
-          children: options.entries.map((e) {
-            final on = e.key == value;
-            return Padding(
-              padding: const EdgeInsetsDirectional.only(end: 8),
-              child: ChoiceChip(
-                selected: on,
-                showCheckmark: false,
-                label: Text(e.value),
-                labelStyle: TextStyle(fontWeight: FontWeight.w700, color: on ? Palette.navy : (onDark ? Colors.white : null)),
-                selectedColor: Palette.goldSoft,
-                backgroundColor: onDark ? Colors.white.withValues(alpha: .14) : null,
-                onSelected: (_) => onChanged(e.key),
+  Widget build(BuildContext context) {
+    final brand = onDark ?? HeaderTone.onBrandOf(context);
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    return SizedBox(
+      height: 40,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        children: options.entries.map((e) {
+          final on = e.key == value;
+          final bg = on ? (brand ? Colors.white : Palette.maroon) : (brand ? Colors.white.withValues(alpha: .14) : (dark ? Palette.nightCard : Colors.white));
+          final fg = on ? (brand ? Palette.maroon : Colors.white) : (brand || dark ? Colors.white : Palette.ink);
+          final border = on ? Colors.transparent : (brand ? Colors.white24 : (dark ? Palette.nightLine : Palette.line));
+          return Padding(
+            padding: const EdgeInsetsDirectional.only(end: 8),
+            child: Material(
+              color: bg,
+              shape: StadiumBorder(side: BorderSide(color: border)),
+              child: InkWell(
+                customBorder: const StadiumBorder(),
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  onChanged(e.key);
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Center(child: Text(e.value, style: TextStyle(color: fg, fontWeight: on ? FontWeight.w700 : FontWeight.w500, fontSize: 13.5))),
+                ),
               ),
-            );
-          }).toList(),
-        ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
+/// A search field for page headers.
+class SearchField extends StatelessWidget {
+  const SearchField({super.key, required this.controller, required this.hint, this.onSubmitted});
+  final TextEditingController controller;
+  final String hint;
+  final ValueChanged<String>? onSubmitted;
+
+  @override
+  Widget build(BuildContext context) => TextField(
+        controller: controller,
+        textInputAction: TextInputAction.search,
+        onSubmitted: onSubmitted,
+        decoration: InputDecoration(hintText: hint, prefixIcon: const Icon(Icons.search_rounded), contentPadding: const EdgeInsets.symmetric(vertical: 14)),
       );
 }
 

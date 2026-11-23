@@ -42,7 +42,7 @@ class _AttendanceMonthScreenState extends ConsumerState<AttendanceMonthScreen> {
       onRefresh: () async => ref.invalidate(attendanceMonthProvider(_key)),
       headerBottom: Row(children: [
         GlassIconButton(icon: Icons.chevron_left_rounded, tooltip: context.tr('previous'), onTap: () => _shift(-1)),
-        Expanded(child: Center(child: Text(Fmt.month(_month, context.lang), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 18)))),
+        Expanded(child: Center(child: Text(Fmt.month(_month, context.lang), style: Theme.of(context).textTheme.titleLarge))),
         GlassIconButton(icon: Icons.chevron_right_rounded, tooltip: context.tr('next'), onTap: () => _shift(1)),
       ]),
       children: [

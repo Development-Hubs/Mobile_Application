@@ -8,7 +8,8 @@ The mobile companion of the OneSource ERP, for **staff**, **customers** and **wo
 
 | Area | Who | Screens |
 |---|---|---|
-| Sign-in | everyone | One screen, no role cards. Staff use **work email + password + MFA code**. Customers and workers use **phone + one-time code**, with an optional invitation code. A workspace chooser appears only when the phone is linked to more than one company or record. |
+| Sign-in | everyone | One screen, no role cards and no company code: the ERP finds the company from the address (`<company>.onesourceerp.com`) or the staff email, and asks for a code only when it cannot. Customers and workers use **phone + one-time code** (the default tab), with an optional invitation code. Staff use **work email + password + MFA code**. A workspace chooser appears only when the phone is linked to more than one company or record. |
+| Registration | new customers | **Create an account**: full name, mobile, optional email and consent, then the phone is confirmed with a one-time code. The ERP (`POST auth/register`) then links an existing customer with the same phone or opens a new *prospect* customer file. A phone that is signed in but not linked can also register from the *waiting* screen. |
 | Security | everyone | Token in Keychain / Android Keystore storage; optional biometric unlock through the OS (no face images); signed-in devices list; sign out here or everywhere. |
 | Home | staff | Live attendance card with a **"Please mark your attendance"** reminder, admin requests, unread counts, and the modules the ERP allows. |
 | Home | customer / worker | Document expiry bars, accommodation, trips, training, certificates (worker); placements, contracts, recruitment and pickup (customer). |
@@ -21,7 +22,7 @@ The mobile companion of the OneSource ERP, for **staff**, **customers** and **wo
 | Learning | customer / worker | Requirements, enrolments, sessions, results, certificates, course materials, quizzes with saved progress, catalogue, request a place, withdraw, session check-in by QR scan or code. |
 | Calendar | everyone | 30-day agenda with RSVP. |
 | More | everyone | Module library built from `GET me`. ERP modules that have no mobile screens yet open the ERP in the browser and are labelled so. |
-| Settings | everyone | Language (auto / English / Arabic), theme, **motion** (follow device / reduced / full), biometrics, devices, about. |
+| Settings | everyone | Language (Arabic by default / English), theme, **motion** (follow device / reduced / full), biometrics, devices, about. |
 
 Permissions always come from the ERP (`GET me` → `permissions`, `areas`, `modules`, `attendance`, `driver`). Nothing is unlocked by a choice made on the phone, and the server checks every call again.
 
@@ -54,7 +55,7 @@ Build-time values are passed with `--dart-define-from-file`. **They are not secr
 | `config/demopartner.example.json` | https://demopartner.onesourceerp.com (partner company: attendance answers `module_disabled`) |
 | `config/production.example.json` | production template |
 
-Keys: `API_BASE_URL`, `COMPANY_CODE` (optional pre-fill for staff sign-in), `ENV_NAME` (shows a gold ribbon, e.g. `DEMO`), `ALLOW_CUSTOM_SERVER` (lets testers type another ERP address), `ANDROID_PACKAGE` / `IOS_APP_ID` (store pages for the update screen), `FIREBASE_*` (push; empty = off).
+Keys: `API_BASE_URL`, `COMPANY_CODE` (optional; only needed when the build talks to the shared ERP address instead of a company subdomain), `ENV_NAME` (shows a gold ribbon, e.g. `DEMO`), `ALLOW_CUSTOM_SERVER` (lets testers type another ERP address), `ANDROID_PACKAGE` / `IOS_APP_ID` (store pages for the update screen), `FIREBASE_*` (push; empty = off).
 
 Copy an example to `config/<name>.local.json` (ignored by git). Signing keys, Firebase files and store credentials must be provided through your CI secret store or local keychain — **never commit them**. `.gitignore` already excludes `*.jks`, `key.properties`, `google-services.json`, `GoogleService-Info.plist` and `config/*.local.json`.
 
