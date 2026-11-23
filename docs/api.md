@@ -37,3 +37,8 @@ The same `WebAttendance` service and company rules (location radius, breaks, shi
 | `GET accommodation/subjects?q=` | `accommodation.edit` | workers and candidates with their current stay |
 | `GET training/staff/approvals` | `training.approve` | nominations waiting |
 | `GET training/staff/assessor-tasks` | `training.assess` | now also returns each learner's `rubric` and `meta.methods` |
+| `GET my/invoices` | customer | invoices (Package 2, Package 1 trial, overseas agreement), receipts, totals; `meta.currency` |
+| `GET my/salaries` | worker | salary statements; `meta.available` |
+| `GET my/agreements`, `GET my/agreements/{boa\|bia}/{ref}` | customer | list with `can_sign`; text sections and consent |
+| `POST my/agreements/{boa\|bia}/{ref}/sign` | customer | `{name, signature: data:image/png;base64, agree}`; `409 not_ready` until the office sends it |
+| `GET my/shortlists`, `POST my/shortlists/{id}/choose\|interview` | customer | same reservation and booking as the public shortlist page |

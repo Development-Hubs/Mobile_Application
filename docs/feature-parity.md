@@ -16,7 +16,7 @@ Legend: **App** = native screen in this app · **Web** = opens the ERP in the br
 | Signed-in devices, sign out device / everywhere | App | `auth/devices`, `DELETE auth/devices/{id}`, `auth/logout`, `auth/logout-all` | No |
 | Notifications inbox, read, read all | App | `notifications*` | No |
 | Notification topic settings | App | `GET/PUT notifications/preferences` | No |
-| Push notifications (FCM/APNs) | App (needs your Firebase files, see push.md) | `devices/push`, `DELETE devices/push` | No |
+| Push notifications (FCM/APNs) | App (needs your Firebase project values, see push.md) | `devices/push`, `DELETE devices/push` | No |
 | Help desk: list, create with files, chat, actions | App | `support/categories`, `cases*`, `attachments/{id}` | No |
 | Calendar agenda + RSVP | App | `calendar`, `calendar/invitations/{id}/respond` | No |
 | Language EN/AR (RTL), theme, motion setting | App | — | No |
@@ -54,4 +54,10 @@ Legend: **App** = native screen in this app · **Web** = opens the ERP in the br
 | My learning, catalogue, request, withdraw | App | `training/my`, `training/catalogue`, `training/requests`, `training/enrolments/{id}/withdraw` | No |
 | Session check-in by QR scan or typed code | App | `training/sessions/{id}/check-in` | No |
 | Course materials (text, files) and quizzes with saved progress | App | `training/courses/{code}/materials`, `materials/{id}/file`, `quizzes/{id}`, `quizzes/{id}/draft` | No |
-| Candidate catalogue, shortlist, agreements, e-signature, invoices, payments, salary statements | — | not in API v1 | — |
+| Shortlists: candidates with photo/video, match score; choose or book a video interview | App (customer) | `my/shortlists`, `my/shortlists/{id}/choose\|interview` (PR #254) | No |
+| Ask the office for candidates | App (customer) | `POST cases` (category recruitment) | No |
+| Agreements: read (EN/AR/local) and sign with a drawn signature | App (customer) | `my/agreements`, `my/agreements/{kind}/{ref}`, `…/sign` (PR #254, same rules as the web signing page) | No |
+| Invoices, receipts, balance | App (customer) | `my/invoices` (PR #254) | No |
+| Pay: send transfer proof to the office | App (customer) | `POST cases` (category payments, linked contract) | No |
+| Online card payment inside the app | — | needs a payment provider account (see limitations) | — |
+| Salary statements, ask about a salary | App (worker) | `my/salaries` (PR #254), `POST cases` (category salary) | No |

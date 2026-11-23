@@ -19,6 +19,7 @@ import '../../features/home/home_screen.dart';
 import '../../features/home/home_shell.dart';
 import '../../features/modules/more_screen.dart';
 import '../../features/notifications/notifications_screen.dart';
+import '../../features/portal/portal_screens.dart';
 import '../../features/renewals/renewals_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../features/training/learning_screen.dart';
@@ -65,6 +66,8 @@ bool _allowed(SessionState s, String loc) {
   if (starts('/trips')) return me.driver;
   if (starts('/trainer')) return me.area('training');
   if (starts('/learning')) return !me.isStaff;
+  if (starts('/invoices') || starts('/agreements') || starts('/shortlists')) return me.isCustomer;
+  if (starts('/salaries')) return me.isWorker;
   if (starts('/team')) return me.attendance && (me.can('hrm.view') || me.can('hrm.edit'));
   if (starts('/assessor')) return me.modules.contains('training') && me.can('training.assess');
   if (starts('/training-approvals')) return me.modules.contains('training') && me.can('training.approve');
@@ -122,7 +125,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(parentNavigatorKey: _rootKey, path: '/attendance', builder: (_, __) => const AttendanceScreen()),
       GoRoute(parentNavigatorKey: _rootKey, path: '/attendance/month', builder: (_, __) => const AttendanceMonthScreen()),
       GoRoute(parentNavigatorKey: _rootKey, path: '/attendance/corrections', builder: (_, s) => CorrectionsScreen(date: s.extra as String?)),
-      GoRoute(parentNavigatorKey: _rootKey, path: '/cases/new', builder: (_, __) => const NewCaseScreen()),
+      GoRoute(parentNavigatorKey: _rootKey, path: '/cases/new', builder: (_, s) => NewCaseScreen(prefill: s.extra is CasePrefill ? s.extra as CasePrefill : null)),
       GoRoute(parentNavigatorKey: _rootKey, path: '/cases/:id', builder: (_, s) => CaseDetailScreen(id: s.pathParameters['id']!)),
       GoRoute(parentNavigatorKey: _rootKey, path: '/renewals', builder: (_, __) => const RenewalsScreen()),
       GoRoute(parentNavigatorKey: _rootKey, path: '/care', builder: (_, __) => const CareScreen()),
@@ -133,6 +136,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(parentNavigatorKey: _rootKey, path: '/team', builder: (_, s) => TeamAttendanceScreen(approvals: s.uri.queryParameters['tab'] == 'approvals')),
       GoRoute(parentNavigatorKey: _rootKey, path: '/assessor', builder: (_, __) => const AssessorScreen()),
       GoRoute(parentNavigatorKey: _rootKey, path: '/training-approvals', builder: (_, __) => const TrainingApprovalsScreen()),
+      GoRoute(parentNavigatorKey: _rootKey, path: '/invoices', builder: (_, __) => const InvoicesScreen()),
+      GoRoute(parentNavigatorKey: _rootKey, path: '/salaries', builder: (_, __) => const SalariesScreen()),
+      GoRoute(parentNavigatorKey: _rootKey, path: '/agreements', builder: (_, __) => const AgreementsScreen()),
+      GoRoute(parentNavigatorKey: _rootKey, path: '/shortlists', builder: (_, __) => const ShortlistsScreen()),
       GoRoute(parentNavigatorKey: _rootKey, path: '/calendar', builder: (_, __) => const CalendarScreen()),
       GoRoute(parentNavigatorKey: _rootKey, path: '/settings', builder: (_, __) => const SettingsScreen()),
       GoRoute(parentNavigatorKey: _rootKey, path: '/devices', builder: (_, __) => const DevicesScreen()),

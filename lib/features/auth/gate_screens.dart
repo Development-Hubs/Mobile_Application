@@ -72,7 +72,10 @@ class GateScreen extends ConsumerWidget {
             label: context.tr('gate.open_store'),
             icon: Icons.open_in_new_rounded,
             onPressed: () async {
-              final uri = Uri.parse(Theme.of(context).platform == TargetPlatform.iOS ? 'https://apps.apple.com/' : 'https://play.google.com/store/apps/details?id=qa.onesource.onesource_connect');
+              final ios = Theme.of(context).platform == TargetPlatform.iOS;
+              final uri = Uri.parse(ios
+                  ? (Env.iosAppId.isNotEmpty ? 'https://apps.apple.com/app/id${Env.iosAppId}' : 'https://apps.apple.com/search?term=OneSource%20Connect')
+                  : 'https://play.google.com/store/apps/details?id=${Env.androidPackage}');
               await launchUrl(uri, mode: LaunchMode.externalApplication);
             },
           )

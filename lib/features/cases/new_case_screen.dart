@@ -19,8 +19,20 @@ final categoriesProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>
   return (await ref.read(apiProvider).get('support/categories')).list;
 });
 
+/// Optional starting values, e.g. "send payment proof" from an invoice (category payments, linked contract).
+class CasePrefill {
+  const CasePrefill({this.category, this.subject, this.body, this.links = const []});
+  final String? category;
+  final String? subject;
+  final String? body;
+
+  /// `[{type: 'rental_contract', id: 12}]` — the ERP checks that each linked record belongs to the person.
+  final List<Map<String, dynamic>> links;
+}
+
 class NewCaseScreen extends ConsumerStatefulWidget {
-  const NewCaseScreen({super.key});
+  const NewCaseScreen({super.key, this.prefill});
+  final CasePrefill? prefill;
 
   @override
   ConsumerState<NewCaseScreen> createState() => _NewCaseScreenState();
@@ -39,8 +51,10 @@ class _NewCaseScreenState extends ConsumerState<NewCaseScreen> {
   void initState() {
     super.initState();
     final store = ref.read(offlineStoreProvider);
-    _subject.text = store.draft('newcase.subject') ?? '';
-    _body.text = store.draft('newcase.body') ?? '';
+    final pre = widget.prefill;
+    _category = pre?.category;
+    _subject.text = pre?.subject ?? store.draft('newcase.subject') ?? '';
+    _body.text = pre?.body ?? store.draft('newcase.body') ?? '';
     _subject.addListener(() => store.saveDraft('newcase.subject', _subject.text));
     _body.addListener(() => store.saveDraft('newcase.body', _body.text));
   }
@@ -48,15 +62,20 @@ class _NewCaseScreenState extends ConsumerState<NewCaseScreen> {
   Future<void> _submit() async {
     setState(() => _error = null);
     final api = ref.read(apiProvider);
-    final fields = {
+    final fields = <String, dynamic>{
       'category': _category ?? '',
       'subject': _subject.text.trim(),
       'description': _body.text.trim(),
       'language': context.lang,
       if (ref.read(meProvider).isStaff) 'priority': _priority,
     };
+    final links = widget.prefill?.links ?? const <Map<String, dynamic>>[];
+    // JSON takes the list as is; multipart needs bracket keys
+    final multipart = {...fields, for (final (i, l) in links.indexed) ...{'links[$i][type]': '${l['type']}', 'links[$i][id]': '${l['id']}'}};
     try {
-      final r = _files.isEmpty ? await api.post('cases', body: fields, idempotencyKey: _key) : await api.upload('cases', fields: fields, files: _files, idempotencyKey: _key);
+      final r = _files.isEmpty
+          ? await api.post('cases', body: {...fields, if (links.isNotEmpty) 'links': links}, idempotencyKey: _key)
+          : await api.upload('cases', fields: multipart, files: _files, idempotencyKey: _key);
       final store = ref.read(offlineStoreProvider);
       await store.clearDraft('newcase.subject');
       await store.clearDraft('newcase.body');

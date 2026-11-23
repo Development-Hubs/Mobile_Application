@@ -10,16 +10,20 @@ This list is meant to be exact. Please do not describe the app as complete.
 4. **Backend tests not run.** The ERP changes in chatbot PRs #253 and #254 include feature tests that were not executed (that environment had PHP 8.3; the ERP needs 8.4).
 5. **No end-to-end run against demoagent / demopartner.** Response shapes were taken from the ERP source code, not from live answers.
 
-## Built but needs your setup
+## Needs your accounts (cannot be done from the code)
 
-* **Push notifications** — code is in the app; it switches on once your Firebase files are added (`flutterfire configure`, see [push.md](push.md)) and the ERP push driver is set. Until then the in-app inbox works on its own.
-* **Store links** on the "update required" screen — the Play Store link uses the planned id `qa.onesource.onesource_connect`; the App Store link needs the real app id after listing.
-* **Release signing** — no keystore or provisioning profile is included, by design. Provide them through your CI secret store.
+Everything below is prepared in the repository; only your own accounts and keys are missing.
+
+* **Firebase project for push** — create it and put its ids in your config (`FIREBASE_*`) or run `flutterfire configure` ([push.md](push.md)); set the ERP push driver.
+* **Signing keys** — `tool/make_keystore.sh` creates the Android upload key on your machine; Apple certificate and profile come from your Apple Developer account ([release.md](release.md)).
+* **Store listings** — create the apps in Google Play Console and App Store Connect; texts in English and Arabic and the privacy answers are ready in [store-listing.md](store-listing.md). Put the App Store id in `IOS_APP_ID`.
+* **Online card payment** — needs a contract with a payment provider (e.g. a Qatar acquiring bank or gateway) and its keys. Until then customers pay at the office or by transfer and send the proof from the invoice screen; the office confirms.
+* **Privacy policy URL** — both stores require one on your website.
+* **GitHub Actions billing** — CI and release workflows are written but cannot run until billing is fixed on the organisation.
 
 ## Not built (by decision)
 
-* Customer candidate catalogue, shortlist, interview requests, agreements and e-signature, invoices and payments, worker salary statements — these are not in API v1 and involve money or legal records.
-* ERP modules listed as *Web* in [feature-parity.md](feature-parity.md) (CRM, finance, HRM admin, recruitment, packages, agent network, GM, chatbot admin). They open the ERP in the browser from the app.
+* ERP administration modules (CRM, finance, HRM admin, recruitment pipelines, packages, agent network, GM, chatbot admin) stay on the ERP web, opened from the app's *In the ERP* section. They are desktop work with large tables and forms.
 * An Arabic brand font: Arabic uses the system font (SF Arabic / Noto) because Inter has no Arabic glyphs.
 
 ## Design notes

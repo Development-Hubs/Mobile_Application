@@ -55,4 +55,30 @@ for name in ('build.gradle.kts', 'build.gradle'):
             gradle.write_text(new)
             changed.append(str(gradle.relative_to(root)))
 
+# ---- Android: release signing from key.properties --------------------------------------------------------------
+for name in ('build.gradle.kts', 'build.gradle'):
+    gradle = root / 'android' / 'app' / name
+    if gradle.exists():
+        text = gradle.read_text()
+        line = 'apply(from = "signing.gradle")' if name.endswith('kts') else "apply from: 'signing.gradle'"
+        if 'signing.gradle' not in text:
+            gradle.write_text(text.rstrip() + '\n\n// release signing from key.properties (tool/configure_platforms.py)\n' + line + '\n')
+            changed.append(str(gradle.relative_to(root)) + ' (signing)')
+
+# ---- iOS: push entitlement ------------------------------------------------------------------------------------
+ent = root / 'ios' / 'Runner' / 'Runner.entitlements'
+pbx = root / 'ios' / 'Runner.xcodeproj' / 'project.pbxproj'
+if (root / 'ios' / 'Runner').exists() and not ent.exists():
+    with ent.open('wb') as f:
+        plistlib.dump({'aps-environment': 'development'}, f)  # Xcode switches to production for App Store builds
+    changed.append(str(ent.relative_to(root)))
+if pbx.exists():
+    text = pbx.read_text()
+    if 'CODE_SIGN_ENTITLEMENTS' not in text:
+        # only the Runner target's configurations (they carry the app bundle id without "RunnerTests")
+        new = re.sub(r'^([ \t]*)PRODUCT_BUNDLE_IDENTIFIER = ([^;]*?);$', lambda m: m.group(0) if 'RunnerTests' in m.group(2) else m.group(0) + '\n' + m.group(1) + 'CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;', text, flags=re.M)
+        if new != text:
+            pbx.write_text(new)
+            changed.append(str(pbx.relative_to(root)))
+
 print('updated:', ', '.join(changed) if changed else 'nothing')

@@ -7,13 +7,15 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../api/api_client.dart';
+import '../config/env.dart';
 import '../auth/session_controller.dart';
 
 /// Push notifications through Firebase Cloud Messaging (Android) and APNs via FCM (iOS).
 ///
-/// Push only works once the Firebase files of your own Firebase project are added to the build
-/// (`flutterfire configure`, see docs/push.md). Without them [init] fails quietly and the app keeps
-/// working with the in-app inbox, which is always the source of truth.
+/// Push works once your Firebase project is connected, either with the FIREBASE_* build values in
+/// config/<env>.json or with the platform files from `flutterfire configure` (see docs/push.md).
+/// Without them [init] fails quietly and the app keeps working with the in-app inbox, which is always
+/// the source of truth.
 class PushService {
   PushService(this._api);
   final ApiClient _api;
@@ -33,7 +35,7 @@ class PushService {
   Future<void> init() async {
     if (_ready) return;
     try {
-      await Firebase.initializeApp();
+      await Firebase.initializeApp(options: _options());
       _ready = true;
     } catch (e) {
       debugPrint('Push disabled: Firebase is not configured for this build ($e)');
@@ -43,6 +45,23 @@ class PushService {
     FirebaseMessaging.onMessageOpenedApp.listen(_open);
     final initial = await FirebaseMessaging.instance.getInitialMessage();
     if (initial != null) _open(initial);
+  }
+
+  /// Options from build values (config/*.json) when given; otherwise the platform files
+  /// (google-services.json / GoogleService-Info.plist) written by `flutterfire configure`.
+  static FirebaseOptions? _options() {
+    if (Env.firebaseProjectId.isEmpty) return null;
+    final ios = Platform.isIOS;
+    final appId = ios ? Env.firebaseIosAppId : Env.firebaseAndroidAppId;
+    final key = ios ? Env.firebaseIosApiKey : Env.firebaseAndroidApiKey;
+    if (appId.isEmpty || key.isEmpty) return null;
+    return FirebaseOptions(
+      apiKey: key,
+      appId: appId,
+      messagingSenderId: Env.firebaseSenderId,
+      projectId: Env.firebaseProjectId,
+      iosBundleId: ios ? Env.iosBundleId : null,
+    );
   }
 
   void _open(RemoteMessage m) {

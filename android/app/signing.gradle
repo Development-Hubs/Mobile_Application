@@ -1,0 +1,27 @@
+// Release signing from android/key.properties (never committed). Applied by tool/configure_platforms.py.
+// key.properties:
+//   storeFile=/absolute/path/upload-keystore.jks
+//   storePassword=…
+//   keyAlias=upload
+//   keyPassword=…
+// Without the file, release builds keep Flutter's default (debug) signing so `flutter run --release` still works.
+def keyFile = rootProject.file('key.properties')
+if (keyFile.exists()) {
+    def props = new Properties()
+    keyFile.withInputStream { props.load(it) }
+    android {
+        signingConfigs {
+            upload {
+                storeFile file(props['storeFile'])
+                storePassword props['storePassword']
+                keyAlias props['keyAlias']
+                keyPassword props['keyPassword']
+            }
+        }
+        buildTypes {
+            release {
+                signingConfig signingConfigs.upload
+            }
+        }
+    }
+}

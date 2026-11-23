@@ -328,7 +328,10 @@ class _MemberHome extends ConsumerWidget {
       child: AsyncBody(
         value: data,
         onRetry: () => ref.invalidate(overviewProvider),
-        builder: (r) => r.map['kind'] == 'customer' ? _Customer(o: r.map) : _Worker(o: r.map),
+        builder: (r) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          _QuickTiles(me: ref.watch(meProvider)),
+          r.map['kind'] == 'customer' ? _Customer(o: r.map) : _Worker(o: r.map),
+        ]),
       ),
     );
   }
@@ -534,4 +537,28 @@ class _HelpCta extends StatelessWidget {
           ]),
         ),
       );
+}
+
+/// Shortcuts to the person's own services (shortlists, agreements, invoices, salary, learning, calendar).
+class _QuickTiles extends StatelessWidget {
+  const _QuickTiles({required this.me});
+  final Me me;
+
+  @override
+  Widget build(BuildContext context) {
+    final tiles = modulesFor(me).where((m) => m.native && m.route != '/home' && m.route != '/inbox' && m.route != '/help').toList();
+    if (tiles.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: GridView.count(
+        crossAxisCount: 3,
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        mainAxisSpacing: 10,
+        crossAxisSpacing: 10,
+        childAspectRatio: .95,
+        children: [for (final (i, m) in tiles.indexed) Reveal(index: i, child: ModuleTile(m: m))],
+      ),
+    );
+  }
 }

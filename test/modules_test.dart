@@ -21,5 +21,11 @@ void main() {
     final keys = modulesFor(worker).map((m) => m.key).toSet();
     expect(keys, containsAll({'my_overview', 'support', 'learning', 'calendar'}));
     expect(keys.contains('renewals'), isFalse);
+    expect(keys, contains('salaries'));
+    expect(keys.contains('invoices'), isFalse);
+
+    final customer = modulesFor(Me({'type': 'customer'})).map((m) => m.key).toSet();
+    expect(customer, containsAll({'shortlists', 'agreements', 'invoices'}));
+    expect(customer.contains('salaries'), isFalse);
   });
 }

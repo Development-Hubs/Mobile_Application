@@ -32,6 +32,7 @@ dependencies:
   app_links: ^6.3.2
   firebase_core: ^3.8.0
   firebase_messaging: ^15.1.5
+  flutter_widget_from_html_core: ^0.15.2
 
 dev_dependencies:
   flutter_test:

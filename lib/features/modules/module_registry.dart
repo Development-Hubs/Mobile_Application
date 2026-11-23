@@ -21,8 +21,12 @@ class AppModule {
 /// The server still checks each call; hiding a tile is only a convenience.
 List<AppModule> modulesFor(Me me) {
   if (!me.isStaff) {
-    return [
+    return <AppModule>[
       const AppModule('my_overview', Icons.dashboard_customize_rounded, Palette.maroon, route: '/home', group: 'mine'),
+      if (me.isCustomer) const AppModule('shortlists', Icons.people_alt_rounded, Palette.maroonBright, route: '/shortlists', group: 'mine'),
+      if (me.isCustomer) const AppModule('agreements', Icons.history_edu_rounded, Palette.navySoft, route: '/agreements', group: 'mine'),
+      if (me.isCustomer) const AppModule('invoices', Icons.receipt_long_rounded, Palette.success, route: '/invoices', group: 'mine'),
+      if (me.isWorker) const AppModule('salaries', Icons.account_balance_wallet_rounded, Palette.success, route: '/salaries', group: 'mine'),
       const AppModule('support', Icons.support_agent_rounded, Palette.sea, route: '/help', group: 'mine'),
       const AppModule('learning', Icons.school_rounded, Palette.gold, route: '/learning', group: 'mine'),
       const AppModule('calendar', Icons.event_rounded, Palette.info, route: '/calendar', group: 'mine'),

@@ -12,6 +12,8 @@ The mobile companion of the OneSource ERP, for **staff**, **customers** and **wo
 | Security | everyone | Token in Keychain / Android Keystore storage; optional biometric unlock through the OS (no face images); signed-in devices list; sign out here or everywhere. |
 | Home | staff | Live attendance card with a **"Please mark your attendance"** reminder, admin requests, unread counts, and the modules the ERP allows. |
 | Home | customer / worker | Document expiry bars, accommodation, trips, training, certificates (worker); placements, contracts, recruitment and pickup (customer). |
+| Customer portal | customer | Shortlists (choose a candidate or book a video interview), agreements (read in English/Arabic and sign with a drawn signature), invoices, receipts and payment proof. |
+| Salary statements | worker | Monthly gross, deductions, net, paid and balance, with "ask about this salary". |
 | Attendance | staff of agent companies | Live clock ring, check in, breaks, check out (with confirmation), location when the company requires it, timeline, month calendar, correction requests. Managers: today's team board and approve / reject corrections. |
 | Help desk | everyone | Cases with queues (staff), chat-style conversation, internal notes (staff), attachments up/download, case actions. |
 | Inbox and push | everyone | Notifications, mark read, per-topic push settings, push via Firebase (after your setup, see docs/push.md), `onesource://` links into cases, trips and attendance. |
@@ -47,7 +49,7 @@ Build-time values are passed with `--dart-define-from-file`. **They are not secr
 | `config/demopartner.example.json` | https://demopartner.onesourceerp.com (partner company: attendance answers `module_disabled`) |
 | `config/production.example.json` | production template |
 
-Keys: `API_BASE_URL`, `COMPANY_CODE` (optional pre-fill for staff sign-in), `ENV_NAME` (shows a gold ribbon, e.g. `DEMO`), `ALLOW_CUSTOM_SERVER` (lets testers type another ERP address).
+Keys: `API_BASE_URL`, `COMPANY_CODE` (optional pre-fill for staff sign-in), `ENV_NAME` (shows a gold ribbon, e.g. `DEMO`), `ALLOW_CUSTOM_SERVER` (lets testers type another ERP address), `ANDROID_PACKAGE` / `IOS_APP_ID` (store pages for the update screen), `FIREBASE_*` (push; empty = off).
 
 Copy an example to `config/<name>.local.json` (ignored by git). Signing keys, Firebase files and store credentials must be provided through your CI secret store or local keychain — **never commit them**. `.gitignore` already excludes `*.jks`, `key.properties`, `google-services.json`, `GoogleService-Info.plist` and `config/*.local.json`.
 
@@ -83,6 +85,10 @@ docs/           feature parity matrix, limitations, API notes
 * **Motion.** Every animation goes through `MotionScope`: the device "remove animations" setting or the in-app setting stops the skyline, shimmer, pulses and transitions.
 * **Strings.** Edit `tool/strings.py` (both languages side by side), run `python3 tool/strings.py`. `dart run tool/check_strings.dart` and `test/strings_test.dart` fail when a translation or placeholder is missing.
 
+## Releasing
+
+Signing, store listings, Firebase and the release workflow: [docs/release.md](docs/release.md), [docs/store-listing.md](docs/store-listing.md), [docs/push.md](docs/push.md).
+
 ## Tests and CI
 
 ```bash
@@ -95,4 +101,4 @@ dart run tool/check_strings.dart
 
 ## Backend
 
-The app uses the existing `/api/mobile/v1` of the ERP plus additions made for it in the ERP repository: [#253](https://github.com/Development-Hubs/chatbot/pull/253) (permissions in `GET me`, staff attendance) and [#254](https://github.com/Development-Hubs/chatbot/pull/254) (manager attendance, bed subject search, training approvals, assessor rubric). See [docs/api.md](docs/api.md).
+The app uses the existing `/api/mobile/v1` of the ERP plus additions made for it in the ERP repository: [#253](https://github.com/Development-Hubs/chatbot/pull/253) (permissions in `GET me`, staff attendance) and [#254](https://github.com/Development-Hubs/chatbot/pull/254) (manager attendance, bed subject search, training approvals, assessor rubric, customer invoices / agreements and signing / shortlists, worker salary statements). See [docs/api.md](docs/api.md).
