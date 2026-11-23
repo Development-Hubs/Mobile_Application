@@ -51,6 +51,7 @@ for name in ('build.gradle.kts', 'build.gradle'):
     if gradle.exists():
         text = gradle.read_text()
         new = re.sub(r'minSdk(Version)?\s*=?\s*flutter\.minSdkVersion', lambda m: 'minSdk = 24' if name.endswith('kts') else 'minSdkVersion 24', text)
+        new = re.sub(r'compileSdk(Version)?\s*=?\s*flutter\.compileSdkVersion', lambda m: 'compileSdk = 36' if name.endswith('kts') else 'compileSdkVersion 36', new)
         if new != text:
             gradle.write_text(new)
             changed.append(str(gradle.relative_to(root)))
@@ -64,6 +65,36 @@ for name in ('build.gradle.kts', 'build.gradle'):
         if 'signing.gradle' not in text:
             gradle.write_text(text.rstrip() + '\n\n// release signing from key.properties (tool/configure_platforms.py)\n' + line + '\n')
             changed.append(str(gradle.relative_to(root)) + ' (signing)')
+
+# ---- Android: every plugin builds against the same compileSdk as the app (Flutter 3.44+ needs 36) -------------
+for name, block in (
+    ('build.gradle.kts', '''
+// all plugins compile against Android 36 (tool/configure_platforms.py)
+subprojects {
+    afterEvaluate {
+        extensions.findByName("android")?.withGroovyBuilder { "compileSdkVersion"(36) }
+    }
+}
+'''),
+    ('build.gradle', '''
+// all plugins compile against Android 36 (tool/configure_platforms.py)
+subprojects {
+    afterEvaluate { p ->
+        if (p.extensions.findByName("android") != null) { p.android.compileSdkVersion 36 }
+    }
+}
+'''),
+):
+    gradle = root / 'android' / name
+    if gradle.exists():
+        text = gradle.read_text()
+        if 'compileSdkVersion"(36)' not in text and 'compileSdkVersion 36' not in text:
+            # must be registered before evaluationDependsOn(":app") evaluates the projects
+            marker = 'subprojects {\n    project.evaluationDependsOn'
+            i = text.find(marker)
+            text = (text[:i] + block.lstrip('\n') + '\n' + text[i:]) if i >= 0 else (block + '\n' + text)
+            gradle.write_text(text)
+            changed.append(str(gradle.relative_to(root)) + ' (compileSdk 36)')
 
 # ---- iOS: push entitlement ------------------------------------------------------------------------------------
 ent = root / 'ios' / 'Runner' / 'Runner.entitlements'
