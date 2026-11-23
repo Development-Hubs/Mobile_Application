@@ -36,3 +36,10 @@ Everything below is prepared in the repository; only your own accounts and keys 
 * Customer registration (`POST /api/mobile/v1/auth/register`) and staff sign-in without a company code need the ERP changes in chatbot PR #255 (on top of #253 and #254). Until those are deployed, staff sign-in shows the *Company code* field when the server asks for it, and registration answers with the ERP's error instead of pretending to succeed.
 * A registered customer starts as a **prospect** customer file. What they can open in the app is still decided by the ERP's permissions for that membership.
 * When the app talks to the shared address (not `<company>.onesourceerp.com`) and no `COMPANY_CODE` is set, the ERP cannot tell which company a new customer belongs to and answers `company_required`.
+
+## Email sign-in, phone confirmation and test logins
+
+* `auth/login`, `auth/phone/request`, `auth/phone/verify` and passwords for customer/candidate accounts are in chatbot PR #255. Until it is deployed the app falls back to the old staff sign-in, so only staff can sign in by email.
+* Customer records are linked by the confirmed mobile number only (the same number in the customer file). Workers and candidates are still linked by an office invitation code, or by a test login.
+* Codes are sent by WhatsApp only when `CONNECT_OTP_DRIVER=whatsapp` and its token are configured on the server. For testing, `CONNECT_TEST_PHONES` + `CONNECT_TEST_OTP` give fixed codes to listed numbers.
+* Test logins: `php artisan connect:test-accounts demoagent --force` (see the server README). All are `[TEST]` records with `@test.onesourceerp.com` emails; `--remove` deletes them.

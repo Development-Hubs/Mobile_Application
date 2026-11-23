@@ -14,12 +14,13 @@ import 'auth_scaffold.dart';
 
 /// Enter the one-time code. The code is kept in memory only for this screen and never stored.
 class OtpScreen extends ConsumerStatefulWidget {
-  const OtpScreen({super.key, required this.phone, this.invite = '', this.delivery = 'sms', this.ttl = 300, this.registerName, this.registerEmail = ''});
+  const OtpScreen({super.key, required this.phone, this.invite = '', this.delivery = 'sms', this.ttl = 300, this.registerName, this.registerEmail = '', this.registerPassword = ''});
   final String phone;
 
   /// Set when the person came from the registration screen.
   final String? registerName;
   final String registerEmail;
+  final String registerPassword;
   final String invite;
   final String delivery;
   final int ttl;
@@ -72,7 +73,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
             code: _code.text,
             name: widget.registerName ?? _name.text.trim(),
             invitation: widget.invite,
-            register: widget.registerName == null ? null : (name: widget.registerName!, email: widget.registerEmail),
+            register: widget.registerName == null ? null : (name: widget.registerName!, email: widget.registerEmail, password: widget.registerPassword),
           );
       _code.clear();
       if (mounted && claim == 'pending') Toast.info(context, context.tr('auth.claim_pending'));
@@ -108,7 +109,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         _Shake(
           trigger: _shake,
-          child: _CodeBoxes(controller: _code, focus: _focus, error: _error != null, onComplete: _verify),
+          child: CodeBoxes(controller: _code, focus: _focus, error: _error != null, onComplete: _verify),
         ),
         if (_error != null) ...[
           const SizedBox(height: 10),
@@ -150,8 +151,8 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
   }
 }
 
-class _CodeBoxes extends StatefulWidget {
-  const _CodeBoxes({required this.controller, required this.focus, required this.error, required this.onComplete});
+class CodeBoxes extends StatefulWidget {
+  const CodeBoxes({super.key, required this.controller, required this.focus, required this.error, required this.onComplete});
   final TextEditingController controller;
   final FocusNode focus;
   final bool error;
@@ -159,10 +160,10 @@ class _CodeBoxes extends StatefulWidget {
   static const length = 6;
 
   @override
-  State<_CodeBoxes> createState() => _CodeBoxesState();
+  State<CodeBoxes> createState() => CodeBoxesState();
 }
 
-class _CodeBoxesState extends State<_CodeBoxes> {
+class CodeBoxesState extends State<CodeBoxes> {
   @override
   void initState() {
     super.initState();
@@ -172,7 +173,7 @@ class _CodeBoxesState extends State<_CodeBoxes> {
 
   void _changed() {
     setState(() {});
-    if (widget.controller.text.length == _CodeBoxes.length) widget.onComplete();
+    if (widget.controller.text.length == CodeBoxes.length) widget.onComplete();
   }
 
   @override
@@ -196,7 +197,7 @@ class _CodeBoxesState extends State<_CodeBoxes> {
             focusNode: widget.focus,
             keyboardType: TextInputType.number,
             autofillHints: const [AutofillHints.oneTimeCode],
-            maxLength: _CodeBoxes.length,
+            maxLength: CodeBoxes.length,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             decoration: const InputDecoration(counterText: ''),
           ),
@@ -205,10 +206,10 @@ class _CodeBoxesState extends State<_CodeBoxes> {
           onTap: () => widget.focus.requestFocus(),
           child: Semantics(
             label: context.tr('auth.enter_code'),
-            value: '${text.length} / ${_CodeBoxes.length}',
+            value: '${text.length} / ${CodeBoxes.length}',
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: List.generate(_CodeBoxes.length, (i) {
+              children: List.generate(CodeBoxes.length, (i) {
                 final filled = i < text.length;
                 final active = i == text.length && widget.focus.hasFocus;
                 final color = widget.error ? Palette.danger : (active ? Palette.maroon : (filled ? Palette.maroon.withValues(alpha: .35) : (dark ? Colors.white24 : Palette.line)));

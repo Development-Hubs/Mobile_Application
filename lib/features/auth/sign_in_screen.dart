@@ -58,8 +58,9 @@ class PhoneField extends StatelessWidget {
       );
 }
 
-/// One sign-in screen without role cards: customers and workers use their phone, staff their work email.
-/// What the person can open afterwards is decided by the ERP, not by anything chosen here.
+/// One sign-in for everybody with an ERP login: agency, agent and partner staff, candidates and customers sign in
+/// with email + password. The ERP decides the company and the role from them; nothing is chosen on this screen.
+/// New customers register with their mobile number; a code to the mobile number is kept as a second way in.
 class SignInScreen extends ConsumerStatefulWidget {
   const SignInScreen({super.key});
 
@@ -68,7 +69,7 @@ class SignInScreen extends ConsumerStatefulWidget {
 }
 
 class _SignInScreenState extends ConsumerState<SignInScreen> {
-  bool _email = false;
+  bool _byPhone = false;
   final _phone = TextEditingController();
   final _invite = TextEditingController();
   final _emailCtl = TextEditingController();
@@ -108,10 +109,10 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     }
   }
 
-  Future<void> _staff() async {
+  Future<void> _signIn() async {
     setState(() => _error = null);
     try {
-      await ref.read(sessionProvider.notifier).staffLogin(email: _emailCtl.text, password: _password.text, mfaCode: _needMfa ? _mfa.text : null);
+      await ref.read(sessionProvider.notifier).login(email: _emailCtl.text, password: _password.text, mfaCode: _needMfa ? _mfa.text : null);
       _password.clear();
       _mfa.clear();
     } on ApiException catch (e) {
@@ -132,27 +133,22 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   Widget build(BuildContext context) {
     final boot = ref.watch(sessionProvider.select((s) => s.boot));
     return AuthScaffold(
-      title: context.tr('auth.title'),
-      subtitle: boot?.companyName != null ? context.tr('auth.welcome_to', {'company': boot!.companyName}) : context.tr('auth.subtitle'),
+      title: context.tr(_byPhone ? 'auth.phone_title' : 'auth.title'),
+      subtitle: _byPhone
+          ? context.tr('auth.phone_hint')
+          : (boot?.companyName != null ? context.tr('auth.welcome_to', {'company': boot!.companyName}) : context.tr('auth.subtitle')),
       child: AutofillGroup(
-        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          _Tabs(email: _email, onChanged: (v) => setState(() {
-                _email = v;
-                _error = null;
-              })),
-          const SizedBox(height: 22),
-          AnimatedSwitcher(
-            duration: MotionScope.duration(context, const Duration(milliseconds: 220)),
-            child: _email ? _emailForm() : _phoneForm(),
-          ),
-        ]),
+        child: AnimatedSwitcher(
+          duration: MotionScope.duration(context, const Duration(milliseconds: 220)),
+          child: _byPhone ? _phoneForm() : _emailForm(),
+        ),
       ),
     );
   }
 
   Widget _errorBanner() {
     final e = _error;
-    if (e == null || (e.fields.isNotEmpty && e.code == 'validation_failed' && e.fieldError('company') == null)) return const SizedBox.shrink();
+    if (e == null || (e.fields.isNotEmpty && e.code == 'validation_failed')) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: Container(
@@ -161,7 +157,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         child: Row(children: [
           Icon(e.isOffline ? Icons.wifi_off_rounded : Icons.error_outline_rounded, color: Palette.danger, size: 20),
           const SizedBox(width: 10),
-          Expanded(child: Text(e.fieldError('company') != null ? context.tr('auth.company_unknown') : e.message, style: const TextStyle(color: Palette.danger, fontWeight: FontWeight.w500))),
+          Expanded(child: Text(e.message, style: const TextStyle(color: Palette.danger, fontWeight: FontWeight.w500))),
         ]),
       ),
     );
@@ -172,37 +168,16 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         child: Text(context.tr(key), style: Theme.of(context).textTheme.labelLarge),
       );
 
-  Widget _phoneForm() => Column(key: const ValueKey('phone'), crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        _errorBanner(),
-        _label('auth.phone'),
-        PhoneField(controller: _phone, error: _error?.fieldError('phone'), onSubmitted: (_) => _sendCode()),
-        const SizedBox(height: 6),
-        Text(context.tr('auth.phone_helper'), style: Theme.of(context).textTheme.bodySmall),
-        const SizedBox(height: 10),
-        Align(
-          alignment: AlignmentDirectional.centerStart,
-          child: TextButton.icon(
-            style: TextButton.styleFrom(padding: EdgeInsets.zero, visualDensity: VisualDensity.compact),
-            onPressed: () => setState(() => _hasInvite = !_hasInvite),
-            icon: Icon(_hasInvite ? Icons.remove_circle_outline_rounded : Icons.add_circle_outline_rounded, size: 18),
-            label: Text(context.tr('auth.have_invite')),
-          ),
+  Widget _switchLink({required IconData icon, required String key, required VoidCallback onTap}) => Center(
+        child: TextButton.icon(
+          onPressed: () {
+            HapticFeedback.selectionClick();
+            onTap();
+          },
+          icon: Icon(icon, size: 18),
+          label: Text(context.tr(key)),
         ),
-        if (_hasInvite) ...[
-          const SizedBox(height: 4),
-          Reveal(
-            child: TextField(
-              controller: _invite,
-              textCapitalization: TextCapitalization.characters,
-              decoration: InputDecoration(hintText: context.tr('auth.invite_code'), prefixIcon: const Icon(Icons.confirmation_number_outlined)),
-            ),
-          ),
-        ],
-        const SizedBox(height: 20),
-        BusyButton(label: context.tr('auth.send_code'), onPressed: _sendCode),
-        const SizedBox(height: 24),
-        const _RegisterCard(),
-      ]);
+      );
 
   Widget _emailForm() => Column(key: const ValueKey('email'), crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         _errorBanner(),
@@ -214,7 +189,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
           textInputAction: TextInputAction.next,
           autocorrect: false,
           textDirection: TextDirection.ltr,
-          decoration: InputDecoration(hintText: 'name@company.com', prefixIcon: const Icon(Icons.alternate_email_rounded), errorText: _error?.fieldError('email')),
+          decoration: InputDecoration(hintText: 'name@example.com', prefixIcon: const Icon(Icons.alternate_email_rounded), errorText: _error?.fieldError('email')),
         ),
         const SizedBox(height: 16),
         _label('auth.password'),
@@ -223,7 +198,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
           obscureText: !_showPassword,
           autofillHints: const [AutofillHints.password],
           textInputAction: _needMfa ? TextInputAction.next : TextInputAction.done,
-          onSubmitted: (_) => _needMfa ? null : _staff(),
+          onSubmitted: (_) => _needMfa ? null : _signIn(),
           decoration: InputDecoration(
             prefixIcon: const Icon(Icons.lock_outline_rounded),
             errorText: _error?.fieldError('password'),
@@ -260,7 +235,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                     style: const TextStyle(fontSize: 22, letterSpacing: 10, fontWeight: FontWeight.w700),
                     maxLength: 8,
                     decoration: InputDecoration(counterText: '', hintText: '000000', errorText: _error?.code == 'mfa_invalid' ? _error!.message : null),
-                    onSubmitted: (_) => _staff(),
+                    onSubmitted: (_) => _signIn(),
                   ),
                 ),
               ]),
@@ -268,62 +243,60 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
           ),
         ],
         const SizedBox(height: 22),
-        BusyButton(label: context.tr('auth.sign_in'), onPressed: _staff),
+        BusyButton(label: context.tr('auth.sign_in'), onPressed: _signIn),
+        const SizedBox(height: 6),
+        _switchLink(
+          icon: Icons.sms_outlined,
+          key: 'auth.use_phone_code',
+          onTap: () => setState(() {
+            _byPhone = true;
+            _error = null;
+          }),
+        ),
+        const SizedBox(height: 14),
+        const _RegisterCard(),
       ]);
-}
 
-/// Two-option switch: phone (customers, workers) or work email (staff).
-class _Tabs extends StatelessWidget {
-  const _Tabs({required this.email, required this.onChanged});
-  final bool email;
-  final ValueChanged<bool> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    Widget tab(bool value, IconData icon, String label) {
-      final on = email == value;
-      return Expanded(
-        child: Semantics(
-          selected: on,
-          button: true,
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () {
-              HapticFeedback.selectionClick();
-              onChanged(value);
-            },
-            child: AnimatedContainer(
-              duration: MotionScope.duration(context, const Duration(milliseconds: 200)),
-              curve: Curves.easeOutCubic,
-              padding: const EdgeInsets.symmetric(vertical: 11),
-              decoration: BoxDecoration(
-                color: on ? (dark ? Palette.nightCard : Colors.white) : Colors.transparent,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: on ? [BoxShadow(color: Palette.ink.withValues(alpha: .08), blurRadius: 10, offset: const Offset(0, 2))] : const [],
-              ),
-              child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                Icon(icon, size: 18, color: on ? Palette.maroon : Theme.of(context).hintColor),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Text(label, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: on ? FontWeight.w700 : FontWeight.w500, color: on ? Theme.of(context).colorScheme.onSurface : Theme.of(context).hintColor)),
-                ),
-              ]),
-            ),
+  Widget _phoneForm() => Column(key: const ValueKey('phone'), crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        _errorBanner(),
+        _label('auth.phone'),
+        PhoneField(controller: _phone, error: _error?.fieldError('phone'), onSubmitted: (_) => _sendCode()),
+        const SizedBox(height: 6),
+        Text(context.tr('auth.phone_helper'), style: Theme.of(context).textTheme.bodySmall),
+        const SizedBox(height: 10),
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: TextButton.icon(
+            style: TextButton.styleFrom(padding: EdgeInsets.zero, visualDensity: VisualDensity.compact),
+            onPressed: () => setState(() => _hasInvite = !_hasInvite),
+            icon: Icon(_hasInvite ? Icons.remove_circle_outline_rounded : Icons.add_circle_outline_rounded, size: 18),
+            label: Text(context.tr('auth.have_invite')),
           ),
         ),
-      );
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(color: dark ? Colors.white10 : const Color(0xFFECE8E3), borderRadius: BorderRadius.circular(15)),
-      child: Row(children: [
-        tab(false, Icons.smartphone_rounded, context.tr('auth.method_phone')),
-        tab(true, Icons.badge_outlined, context.tr('auth.method_email')),
-      ]),
-    );
-  }
+        if (_hasInvite) ...[
+          const SizedBox(height: 4),
+          Reveal(
+            child: TextField(
+              controller: _invite,
+              textCapitalization: TextCapitalization.characters,
+              decoration: InputDecoration(hintText: context.tr('auth.invite_code'), prefixIcon: const Icon(Icons.confirmation_number_outlined)),
+            ),
+          ),
+        ],
+        const SizedBox(height: 20),
+        BusyButton(label: context.tr('auth.send_code'), onPressed: _sendCode),
+        const SizedBox(height: 6),
+        _switchLink(
+          icon: Icons.alternate_email_rounded,
+          key: 'auth.use_email',
+          onTap: () => setState(() {
+            _byPhone = false;
+            _error = null;
+          }),
+        ),
+        const SizedBox(height: 14),
+        const _RegisterCard(),
+      ]);
 }
 
 /// "New customer? Create your account" — the entry to registration, shown under the phone form.

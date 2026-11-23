@@ -8,7 +8,8 @@ The mobile companion of the OneSource ERP, for **staff**, **customers** and **wo
 
 | Area | Who | Screens |
 |---|---|---|
-| Sign-in | everyone | One screen, no role cards and **no company code field**: the app takes the company from the ERP address (`demoagent.onesourceerp.com` → `demoagent`) or `COMPANY_CODE`, and the ERP can also find it from the staff email. Customers and workers use **phone + one-time code** (the default tab), with an optional invitation code. Staff use **work email + password + MFA code**. A workspace chooser appears only when the phone is linked to more than one company or record. |
+| Sign-in | everyone | **Email + password for everybody**: agency, agent and partner staff, candidates and customers. The ERP recognises the company and the role from the email and password; there is no company code and no role choice. Staff keep their authenticator (MFA) code. A code to the mobile number remains as a second way in. |
+| Mobile number check | customers, candidates | After an email sign-in without a confirmed number, the app requires the mobile number + one-time code. The ERP then links the customer records with that number (contracts, selections, invoices). |
 | Face ID / fingerprint | everyone | After the first sign-in the app offers Face ID / fingerprint; from then on it opens with a biometric unlock. The operating system checks the face or finger; the app never sees or stores it. |
 | Registration | new customers | **Create an account**: full name, mobile, optional email and consent, then the phone is confirmed with a one-time code. The ERP (`POST auth/register`) then links an existing customer with the same phone or opens a new *prospect* customer file. A phone that is signed in but not linked can also register from the *waiting* screen. |
 | Security | everyone | Token in Keychain / Android Keystore storage; optional biometric unlock through the OS (no face images); signed-in devices list; sign out here or everywhere. |

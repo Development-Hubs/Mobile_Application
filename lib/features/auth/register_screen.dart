@@ -25,14 +25,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _name = TextEditingController();
   final _phone = TextEditingController();
   final _email = TextEditingController();
+  final _password = TextEditingController();
+  bool _showPassword = false;
   bool _agree = false;
   ApiException? _error;
   String? _nameError;
   String? _emailError;
+  String? _passwordError;
 
   @override
   void dispose() {
-    for (final c in [_name, _phone, _email]) {
+    for (final c in [_name, _phone, _email, _password]) {
       c.dispose();
     }
     super.dispose();
@@ -42,9 +45,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final email = _email.text.trim();
     setState(() {
       _nameError = _name.text.trim().length < 2 ? context.tr('auth.name_required') : null;
-      _emailError = email.isNotEmpty && !RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email) ? context.tr('auth.email_invalid') : null;
+      _emailError = !RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email) ? context.tr('auth.email_invalid') : null;
+      _passwordError = _password.text.length < 8 ? context.tr('auth.password_rule') : null;
     });
-    return _nameError == null && _emailError == null;
+    return _nameError == null && _emailError == null && _passwordError == null;
   }
 
   Future<void> _continue() async {
@@ -58,7 +62,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     try {
       final (delivery, ttl) = await ref.read(sessionProvider.notifier).requestOtp(phone);
       if (!mounted) return;
-      context.push('/otp', extra: {'phone': phone, 'delivery': delivery, 'ttl': ttl, 'registerName': _name.text.trim(), 'registerEmail': _email.text.trim()});
+      context.push('/otp', extra: {'phone': phone, 'delivery': delivery, 'ttl': ttl, 'registerName': _name.text.trim(), 'registerEmail': _email.text.trim(), 'registerPassword': _password.text});
     } on ApiException catch (e) {
       if (mounted) setState(() => _error = e);
     }
@@ -112,7 +116,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           _label('auth.phone'),
           PhoneField(controller: _phone, error: e?.fieldError('phone')),
           const SizedBox(height: 16),
-          _label('auth.email', optional: true),
+          _label('auth.email'),
           TextField(
             controller: _email,
             keyboardType: TextInputType.emailAddress,
@@ -120,6 +124,23 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             autocorrect: false,
             textDirection: TextDirection.ltr,
             decoration: InputDecoration(hintText: 'name@example.com', prefixIcon: const Icon(Icons.alternate_email_rounded), errorText: _emailError ?? e?.fieldError('email')),
+          ),
+          const SizedBox(height: 16),
+          _label('auth.new_password'),
+          TextField(
+            controller: _password,
+            obscureText: !_showPassword,
+            autofillHints: const [AutofillHints.newPassword],
+            decoration: InputDecoration(
+              prefixIcon: const Icon(Icons.lock_outline_rounded),
+              helperText: context.tr('auth.password_rule'),
+              errorText: _passwordError ?? e?.fieldError('password'),
+              suffixIcon: IconButton(
+                tooltip: context.tr(_showPassword ? 'auth.hide_password' : 'auth.show_password'),
+                icon: Icon(_showPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined),
+                onPressed: () => setState(() => _showPassword = !_showPassword),
+              ),
+            ),
           ),
           const SizedBox(height: 14),
           InkWell(

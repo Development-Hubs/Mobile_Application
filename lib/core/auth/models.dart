@@ -39,6 +39,10 @@ class Me {
   String get name => str(raw['name']) ?? '';
   String? get email => str(raw['email']);
   String? get phone => str(raw['phone']);
+
+  /// Customers / candidates who signed in with email + password must confirm their mobile number first.
+  /// Staff, and servers that do not send the field, count as verified.
+  bool get phoneVerified => isStaff || raw['phone_verified'] != false;
   String? get jobTitle => str(raw['job_title']);
   bool get owner => raw['owner'] == true;
   bool get driver => raw['driver'] == true;

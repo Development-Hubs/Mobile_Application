@@ -213,7 +213,7 @@ S = [
 ("shortlists.pick_time","Choose a time","اختر موعداً"),("shortlists.booked","Interview with {name} booked: {at}","تم حجز مقابلة مع {name}: {at}"),
 # registration and sign-in (redesign)
 ("auth.title","Sign in","تسجيل الدخول"),
-("auth.subtitle","Use your mobile number, or your work email if you are staff.","استخدم رقم جوالك، أو بريد العمل إن كنت من الموظفين."),
+("auth.subtitle","Sign in with your email and password. Your company and role are recognised automatically.","سجّل الدخول ببريدك الإلكتروني وكلمة المرور، وسيتم التعرّف على شركتك وصلاحياتك تلقائياً."),
 ("auth.new_customer","New customer?","عميل جديد؟"),
 ("auth.create_account","Create an account","إنشاء حساب"),
 ("auth.have_account","Already registered?","لديك حساب؟"),
@@ -240,6 +240,18 @@ S = [
 ("bio.offer_yes","Turn on","تفعيل"),
 ("bio.offer_no","Not now","ليس الآن"),
 ("about.photo","Photo: Doha skyline at night, Wikimedia Commons, CC BY 2.0","الصورة: أفق الدوحة ليلاً، ويكيميديا كومنز، CC BY 2.0"),
+("auth.phone_title","Sign in with a code","الدخول برمز التحقق"),
+("auth.use_phone_code","Sign in with a code to my mobile","الدخول برمز يصل إلى جوالي"),
+("auth.use_email","Sign in with email and password","الدخول بالبريد الإلكتروني وكلمة المرور"),
+("auth.new_password","Create a password","أنشئ كلمة مرور"),
+("auth.password_rule","At least 8 characters","8 أحرف على الأقل"),
+("verify.title","Confirm your mobile number","أكّد رقم جوالك"),
+("verify.body","One last step: we link your contracts, selections and invoices to the number you confirm.","خطوة أخيرة: نربط عقودك واختياراتك وفواتيرك بالرقم الذي تؤكده."),
+("verify.code_sent","Enter the code sent to {phone}","أدخل الرمز المرسل إلى {phone}"),
+("verify.why","Your number is how the office knows your file. It is confirmed once and never shared.","رقمك هو ما يعرّف المكتب على ملفك. يتم تأكيده مرة واحدة ولا تتم مشاركته."),
+("verify.change_number","Use another number","استخدام رقم آخر"),
+("verify.linked","Number confirmed. {n} record(s) linked to your account.","تم تأكيد الرقم وربط {n} من سجلاتك بحسابك."),
+("verify.done","Number confirmed.","تم تأكيد الرقم."),
 ]
 STATUS = {
 "open":("Open","مفتوح"),"new":("New","جديد"),"in_progress":("In progress","قيد التنفيذ"),"awaiting_requester":("Waiting for you","بانتظارك"),"awaiting_internal":("Waiting internally","بانتظار داخلي"),

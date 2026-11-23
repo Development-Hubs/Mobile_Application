@@ -6,6 +6,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 import '../api/api_client.dart';
 import '../api/api_exception.dart';
+import '../api/api_result.dart';
 import '../config/env.dart';
 import '../offline/offline_store.dart';
 import '../push/push_service.dart';
@@ -14,7 +15,7 @@ import '../util/json.dart';
 import 'models.dart';
 import 'session_store.dart';
 
-enum Phase { loading, connect, update, maintenance, offline, signedOut, locked, chooseWorkspace, signedIn }
+enum Phase { loading, connect, update, maintenance, offline, signedOut, locked, verifyPhone, chooseWorkspace, signedIn }
 
 class SessionState {
   const SessionState({
@@ -153,7 +154,7 @@ class SessionController extends Notifier<SessionState> {
       final me = Me((await _api.get('me')).map);
       _registerPush();
       final lock = lockIfEnabled && ref.read(settingsProvider).biometrics;
-      state = state.copyWith(me: me, phase: lock ? Phase.locked : (me.isPending && me.workspaces.length > 1 ? Phase.chooseWorkspace : Phase.signedIn));
+      state = state.copyWith(me: me, phase: _phaseFor(me, lock: lock));
     } on ApiException catch (e) {
       if (e.endsSession || e.status == 401) {
         await _signedOutLocally(notice: e.message);
@@ -163,9 +164,57 @@ class SessionController extends Notifier<SessionState> {
     }
   }
 
-  void unlocked() => state = state.copyWith(phase: Phase.signedIn);
+  Phase _phaseFor(Me me, {bool lock = false}) {
+    if (lock) return Phase.locked;
+    if (!me.phoneVerified) return Phase.verifyPhone;
+    if (me.isPending && me.workspaces.length > 1) return Phase.chooseWorkspace;
+    return Phase.signedIn;
+  }
+
+  void unlocked() => state = state.copyWith(phase: state.me == null ? Phase.signedIn : _phaseFor(state.me!));
 
   // ---- staff --------------------------------------------------------------------------------------------------
+
+  /// One sign-in for staff, candidates and customers: the ERP decides the company and the role from the email and
+  /// password. Throws [ApiException] `mfa_required` when an authenticator code is needed (repeat with [mfaCode]).
+  Future<void> login({required String email, required String password, String? mfaCode}) async {
+    final body = {
+      if (state.company.isNotEmpty) 'company': state.company,
+      'email': email.trim(),
+      'password': password,
+      if (mfaCode != null && mfaCode.isNotEmpty) 'mfa_code': mfaCode.trim(),
+      'device_name': deviceName,
+    };
+    ApiResult r;
+    try {
+      r = await _api.post('auth/login', body: body);
+    } on ApiException catch (e) {
+      // servers before the unified sign-in only know the staff route
+      if (e.status != 404 && e.status != 405) rethrow;
+      r = await _api.post('auth/staff/login', body: body);
+    }
+    await _adopt(r.map);
+    await refreshMe();
+  }
+
+  /// After an email sign-in: send a code to the mobile number the person types.
+  Future<(String, int)> requestPhoneCode(String phone) async {
+    final r = await _api.post('auth/phone/request', body: {'phone': phone});
+    return (str(r.map['delivery']) ?? 'sms', integer(r.map['expires_in']) ?? 600);
+  }
+
+  /// Confirms the number; the ERP links the customer records that carry it. Returns how many were linked.
+  Future<int> verifyPhone(String phone, String code) async {
+    final r = await _api.post('auth/phone/verify', body: {'phone': phone, 'code': code});
+    final linked = integer(r.map['linked']) ?? 0;
+    final workspaces = maps(r.map['workspaces']);
+    if (workspaces.length == 1) {
+      await switchWorkspace(integer(workspaces.first['id'])!);
+    } else {
+      await refreshMe();
+    }
+    return linked;
+  }
 
   /// Throws [ApiException] with code `mfa_required` when a code is needed; the caller repeats with [mfaCode].
   /// [company] is optional: the ERP finds the company from the address or the email, and asks for the
@@ -196,7 +245,7 @@ class SessionController extends Notifier<SessionState> {
   /// Returns the claim status when an invitation code was used (`pending`, `active`) or null.
   /// With [register], a phone that has no workspace yet is registered as a new customer of this company
   /// (`auth/register`) before the app opens; the ERP decides whether that is allowed.
-  Future<String?> verifyOtp({required String phone, required String code, String? name, String? invitation, ({String name, String email})? register}) async {
+  Future<String?> verifyOtp({required String phone, required String code, String? name, String? invitation, ({String name, String email, String password})? register}) async {
     final r = await _api.post('auth/otp/verify', body: {
       'phone': phone,
       'code': code,
@@ -210,6 +259,7 @@ class SessionController extends Notifier<SessionState> {
       final reg = await _api.post('auth/register', body: {
         'name': register.name.trim(),
         if (register.email.trim().isNotEmpty) 'email': register.email.trim(),
+        if (register.password.isNotEmpty) 'password': register.password,
         if (state.company.isNotEmpty) 'company': state.company,
       });
       final id = integer(reg.map['membership_id']);
@@ -223,7 +273,7 @@ class SessionController extends Notifier<SessionState> {
     final me = Me((await _api.get('me')).map);
     _registerPush();
     // a chooser only when the phone is linked to more than one company or record
-    state = state.copyWith(me: me, phase: workspaces.length > 1 ? Phase.chooseWorkspace : Phase.signedIn);
+    state = state.copyWith(me: me, phase: workspaces.length > 1 ? Phase.chooseWorkspace : _phaseFor(me));
     return str(r.map['claim_status']);
   }
 
