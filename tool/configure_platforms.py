@@ -24,6 +24,11 @@ if plist_path.exists():
         'NSPhotoLibraryUsageDescription': 'Choose photos to attach to a help request.',
         'NSLocationWhenInUseUsageDescription': 'Your company records where attendance is marked and where trip milestones happen.',
         'LSApplicationQueriesSchemes': ['https', 'tel'],
+        # onesource://… links (lib/core/links/deep_links.dart); handled by app_links, not Flutter's own deep linking
+        'CFBundleURLTypes': [{'CFBundleURLName': 'qa.onesource.connect', 'CFBundleURLSchemes': ['onesource']}],
+        'FlutterDeepLinkingEnabled': False,
+        # push: remote notifications in the background (also enable Push Notifications capability in Xcode)
+        'UIBackgroundModes': ['remote-notification'],
     })
     with plist_path.open('wb') as f:
         plistlib.dump(plist, f)

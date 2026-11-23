@@ -7,6 +7,8 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../api/api_client.dart';
 import '../api/api_exception.dart';
 import '../config/env.dart';
+import '../offline/offline_store.dart';
+import '../push/push_service.dart';
 import '../settings/app_settings.dart';
 import '../util/json.dart';
 import 'models.dart';
@@ -69,6 +71,8 @@ class SessionController extends Notifier<SessionState> {
     Future.microtask(start);
     return const SessionState();
   }
+
+  ApiClient get api => _api;
 
   /// Id of this device's token, to mark "this device" in the device list.
   String? get tokenId => _session?.tokenId;
@@ -137,6 +141,7 @@ class SessionController extends Notifier<SessionState> {
   Future<void> refreshMe({bool lockIfEnabled = false}) async {
     try {
       final me = Me((await _api.get('me')).map);
+      _registerPush();
       final lock = lockIfEnabled && ref.read(settingsProvider).biometrics;
       state = state.copyWith(me: me, phase: lock ? Phase.locked : (me.isPending && me.workspaces.length > 1 ? Phase.chooseWorkspace : Phase.signedIn));
     } on ApiException catch (e) {
@@ -187,6 +192,7 @@ class SessionController extends Notifier<SessionState> {
     await _adopt(r.map);
     final workspaces = maps(r.map['workspaces']);
     final me = Me((await _api.get('me')).map);
+    _registerPush();
     // a chooser only when the phone is linked to more than one company or record
     state = state.copyWith(me: me, phase: workspaces.length > 1 ? Phase.chooseWorkspace : Phase.signedIn);
     return str(r.map['claim_status']);
@@ -201,6 +207,7 @@ class SessionController extends Notifier<SessionState> {
   Future<void> switchWorkspace(int membershipId) async {
     final r = await _api.post('auth/workspace', body: {'membership_id': membershipId});
     await _adopt(r.map);
+    await ref.read(offlineStoreProvider).wipe();
     // every cached list, draft and file belongs to the old workspace
     state = state.copyWith(epoch: state.epoch + 1, clearMe: true, phase: Phase.loading);
     await refreshMe();
@@ -209,6 +216,7 @@ class SessionController extends Notifier<SessionState> {
   // ---- sign out -----------------------------------------------------------------------------------------------
 
   Future<void> signOut({bool everywhere = false}) async {
+    await ref.read(pushProvider).unregister();
     try {
       await _api.post(everywhere ? 'auth/logout-all' : 'auth/logout');
     } catch (_) {
@@ -225,6 +233,10 @@ class SessionController extends Notifier<SessionState> {
     await _store.write(_session!);
   }
 
+  void _registerPush() {
+    ref.read(pushProvider).register(appVersion: _appVersion, locale: _api.locale).ignore();
+  }
+
   Future<String?> _renew() async {
     final r = await _api.post('auth/token/renew');
     await _adopt(r.map);
@@ -237,6 +249,7 @@ class SessionController extends Notifier<SessionState> {
     _session = null;
     _api.token = null;
     await _store.clearToken();
+    await ref.read(offlineStoreProvider).wipe();
     state = state.copyWith(phase: Phase.signedOut, clearMe: true, notice: notice, epoch: state.epoch + 1);
   }
 }

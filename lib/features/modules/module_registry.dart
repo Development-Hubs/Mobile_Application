@@ -40,6 +40,9 @@ List<AppModule> modulesFor(Me me) {
     if (me.area('accommodation') && me.modules.contains('accommodation')) const AppModule('accommodation', Icons.bed_rounded, Palette.navySoft, route: '/beds'),
     if (me.driver && me.modules.contains('dispatch')) const AppModule('driver', Icons.local_shipping_rounded, Palette.success, route: '/trips'),
     if (me.area('training') && me.modules.contains('training')) const AppModule('trainer', Icons.co_present_rounded, Palette.gold, route: '/trainer'),
+    if (me.attendance && (me.can('hrm.view') || me.can('hrm.edit'))) const AppModule('team_attendance', Icons.groups_rounded, Palette.maroonBright, route: '/team'),
+    if (me.modules.contains('training') && me.can('training.assess')) const AppModule('assessor', Icons.fact_check_rounded, Palette.sea, route: '/assessor'),
+    if (me.modules.contains('training') && me.can('training.approve')) const AppModule('training_approvals', Icons.how_to_reg_rounded, Palette.warning, route: '/training-approvals'),
   ];
 
   // Modules that exist in the ERP but have no mobile screens yet: opened in the browser, clearly labelled.

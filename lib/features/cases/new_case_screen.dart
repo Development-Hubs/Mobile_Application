@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../core/api/api_client.dart';
 import '../../core/api/api_exception.dart';
 import '../../core/auth/session_controller.dart';
+import '../../core/offline/offline_store.dart';
 import '../../core/i18n/i18n.dart';
 import '../../core/theme/palette.dart';
 import '../../core/util/json.dart';
@@ -34,6 +35,16 @@ class _NewCaseScreenState extends ConsumerState<NewCaseScreen> {
   final _key = ApiClient.newKey(); // one key for this form; a retry after a lost answer cannot open a second case
   ApiException? _error;
 
+  @override
+  void initState() {
+    super.initState();
+    final store = ref.read(offlineStoreProvider);
+    _subject.text = store.draft('newcase.subject') ?? '';
+    _body.text = store.draft('newcase.body') ?? '';
+    _subject.addListener(() => store.saveDraft('newcase.subject', _subject.text));
+    _body.addListener(() => store.saveDraft('newcase.body', _body.text));
+  }
+
   Future<void> _submit() async {
     setState(() => _error = null);
     final api = ref.read(apiProvider);
@@ -46,6 +57,9 @@ class _NewCaseScreenState extends ConsumerState<NewCaseScreen> {
     };
     try {
       final r = _files.isEmpty ? await api.post('cases', body: fields, idempotencyKey: _key) : await api.upload('cases', fields: fields, files: _files, idempotencyKey: _key);
+      final store = ref.read(offlineStoreProvider);
+      await store.clearDraft('newcase.subject');
+      await store.clearDraft('newcase.body');
       if (!mounted) return;
       final similar = maps(r.meta['similar_open_cases']);
       Toast.success(context, context.tr('cases.created', {'ref': r.map['reference'] ?? ''}));

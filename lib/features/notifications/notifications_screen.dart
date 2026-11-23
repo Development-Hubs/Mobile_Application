@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/api/api_exception.dart';
 import '../../core/auth/session_controller.dart';
+import '../../core/links/deep_links.dart';
 import '../../core/i18n/i18n.dart';
 import '../../core/theme/palette.dart';
 import '../../core/util/json.dart';
@@ -14,18 +15,6 @@ final unreadNoticesProvider = FutureProvider.autoDispose<int>((ref) async {
   ref.watch(epochProvider);
   return integer((await ref.read(apiProvider).get('notifications/unread')).map['unread']) ?? 0;
 });
-
-/// Turns a notice link (`onesource://cases/{id}`, `onesource://trips/{ref}`) into an in-app route.
-String? routeForLink(String? link) {
-  if (link == null) return null;
-  final uri = Uri.tryParse(link);
-  if (uri == null || uri.scheme != 'onesource') return null;
-  final seg = [uri.host, ...uri.pathSegments].where((s) => s.isNotEmpty).toList();
-  if (seg.length >= 2 && seg[0] == 'cases') return '/cases/${seg[1]}';
-  if (seg.isNotEmpty && seg[0] == 'trips') return '/trips';
-  if (seg.isNotEmpty && seg[0] == 'attendance') return '/attendance';
-  return null;
-}
 
 class NotificationsScreen extends ConsumerStatefulWidget {
   const NotificationsScreen({super.key});

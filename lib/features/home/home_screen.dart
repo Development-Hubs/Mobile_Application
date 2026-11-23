@@ -14,6 +14,7 @@ import '../../core/util/json.dart';
 import '../../core/widgets/doha_skyline.dart';
 import '../../core/widgets/ui.dart';
 import '../attendance/attendance_api.dart';
+import '../attendance/team_screen.dart';
 import '../modules/module_registry.dart';
 import '../notifications/notifications_screen.dart';
 
@@ -137,6 +138,24 @@ class _StaffHome extends ConsumerWidget {
             ),
           ),
         ),
+      if (me.attendance && me.can('hrm.edit'))
+        Builder(builder: (context) {
+          final n = ref.watch(teamApprovalsProvider).valueOrNull?.list.length ?? 0;
+          if (n == 0) return const SizedBox.shrink();
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: Reveal(
+              index: 1,
+              child: _Notice(
+                icon: Icons.edit_calendar_rounded,
+                color: Palette.maroonBright,
+                title: context.tr('home.corrections', {'n': n}),
+                body: context.tr('home.corrections_body'),
+                action: () => context.push('/team?tab=approvals'),
+              ),
+            ),
+          );
+        }),
       if (!me.mfa)
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),

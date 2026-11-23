@@ -10,6 +10,7 @@ import '../../core/api/api_client.dart';
 import '../../core/api/api_exception.dart';
 import '../../core/api/api_result.dart';
 import '../../core/auth/session_controller.dart';
+import '../../core/offline/offline_store.dart';
 import '../../core/i18n/i18n.dart';
 import '../../core/theme/palette.dart';
 import '../../core/util/format.dart';
@@ -236,6 +237,22 @@ class _ComposerState extends ConsumerState<_Composer> {
   bool _sending = false;
   String? _key;
 
+  String get _draftKey => 'case.${widget.caseId}';
+
+  @override
+  void initState() {
+    super.initState();
+    // unsent text survives closing the screen or losing signal (kept on this phone only)
+    _text.text = ref.read(offlineStoreProvider).draft(_draftKey) ?? '';
+    _text.addListener(() => ref.read(offlineStoreProvider).saveDraft(_draftKey, _text.text));
+  }
+
+  @override
+  void dispose() {
+    _text.dispose();
+    super.dispose();
+  }
+
   Future<void> _pick() async {
     final r = await FilePicker.platform.pickFiles(allowMultiple: true, type: FileType.custom, allowedExtensions: const [
       'jpg', 'jpeg', 'png', 'webp', 'heic', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt', 'm4a', 'mp3', 'aac', 'ogg', 'opus', 'wav',
@@ -263,6 +280,7 @@ class _ComposerState extends ConsumerState<_Composer> {
         await api.upload('cases/${widget.caseId}/messages', fields: fields, files: _files, idempotencyKey: _key);
       }
       _text.clear();
+      await ref.read(offlineStoreProvider).clearDraft(_draftKey);
       _files.clear();
       _key = null;
       ref.invalidate(caseProvider(widget.caseId));
@@ -308,7 +326,7 @@ class _ComposerState extends ConsumerState<_Composer> {
                   minLines: 1,
                   maxLines: 5,
                   textCapitalization: TextCapitalization.sentences,
-                  decoration: InputDecoration(hintText: context.tr(_note ? 'cases.note_hint' : 'cases.reply_hint'), contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12)),
+                  decoration: InputDecoration(helperText: _text.text.isNotEmpty ? context.tr('drafts.saved') : null, hintText: context.tr(_note ? 'cases.note_hint' : 'cases.reply_hint'), contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12)),
                 ),
               ),
               const SizedBox(width: 6),

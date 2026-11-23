@@ -7,22 +7,20 @@ This list is meant to be exact. Please do not describe the app as complete.
 1. **Never compiled.** The code was written in an environment with no Flutter or Dart SDK, and the package registry was unreachable. `flutter analyze`, `flutter test` and builds have **not run**. Expect a first pass of compile fixes (typos, API signature changes in package versions).
 2. **No device testing.** No screen has been seen on a phone. The layouts, RTL mirroring, the skyline animation, dark mode and large-text behaviour are untested.
 3. **CI has not run.** `.github/workflows/ci.yml` is written, but GitHub Actions is blocked by billing on the organisation.
-4. **Backend tests not run.** The ERP changes in chatbot PR #253 include feature tests that were not executed (that environment had PHP 8.3; the ERP needs 8.4).
+4. **Backend tests not run.** The ERP changes in chatbot PRs #253 and #254 include feature tests that were not executed (that environment had PHP 8.3; the ERP needs 8.4).
 5. **No end-to-end run against demoagent / demopartner.** Response shapes were taken from the ERP source code, not from live answers.
 
-## Not built
+## Built but needs your setup
 
-* **Push notifications.** No Firebase project, `google-services.json` or APNs key. The inbox works without push. To add: Firebase Messaging, then `POST devices/push` after sign-in and `DELETE devices/push` on sign-out.
-* **Deep links** (`onesource://…`) from outside the app. Links inside notifications are followed inside the app only.
-* **Offline drafts and queued retries.** Lost answers are safe to retry because of idempotency keys, but nothing is stored for later sending.
-* **QR scanning** for training check-in (the code is typed instead).
-* **Course materials, quizzes, assessor rubric form, enrolment approval** (endpoints exist).
-* **Bed assignment and moves** (needs a subject search endpoint).
-* **Attendance approvals and the manager board** on mobile.
-* All ERP modules listed as *Web* in [feature-parity.md](feature-parity.md).
-* **App icons, splash images and store listings.** `flutter create` provides default icons. The Play Store link on the update screen uses the planned id `qa.onesource.onesource_connect`; the App Store link is a placeholder until the app is listed.
-* **Release signing.** No keystore or provisioning profile is included, by design.
-* **Arabic font.** Inter (bundled, OFL) has no Arabic glyphs; Arabic uses the system font (SF Arabic / Noto). A licensed Arabic brand font can be added later.
+* **Push notifications** — code is in the app; it switches on once your Firebase files are added (`flutterfire configure`, see [push.md](push.md)) and the ERP push driver is set. Until then the in-app inbox works on its own.
+* **Store links** on the "update required" screen — the Play Store link uses the planned id `qa.onesource.onesource_connect`; the App Store link needs the real app id after listing.
+* **Release signing** — no keystore or provisioning profile is included, by design. Provide them through your CI secret store.
+
+## Not built (by decision)
+
+* Customer candidate catalogue, shortlist, interview requests, agreements and e-signature, invoices and payments, worker salary statements — these are not in API v1 and involve money or legal records.
+* ERP modules listed as *Web* in [feature-parity.md](feature-parity.md) (CRM, finance, HRM admin, recruitment, packages, agent network, GM, chatbot admin). They open the ERP in the browser from the app.
+* An Arabic brand font: Arabic uses the system font (SF Arabic / Noto) because Inter has no Arabic glyphs.
 
 ## Design notes
 

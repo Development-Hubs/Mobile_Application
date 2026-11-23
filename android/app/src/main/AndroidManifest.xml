@@ -8,6 +8,8 @@
     <!-- Attendance location, only when the company requires it, and trip milestones -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <!-- Push notifications on Android 13+ (asked only after sign-in) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
     <uses-feature android:name="android.hardware.camera" android:required="false"/>
     <uses-feature android:name="android.hardware.location.gps" android:required="false"/>
@@ -36,6 +38,14 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- onesource://cases/{id}, onesource://trips/{ref}, … (see lib/core/links/deep_links.dart) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="onesource"/>
+            </intent-filter>
+            <meta-data android:name="flutter_deeplinking_enabled" android:value="false"/>
         </activity>
         <meta-data
             android:name="flutterEmbedding"

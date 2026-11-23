@@ -16,10 +16,12 @@ Legend: **App** = native screen in this app · **Web** = opens the ERP in the br
 | Signed-in devices, sign out device / everywhere | App | `auth/devices`, `DELETE auth/devices/{id}`, `auth/logout`, `auth/logout-all` | No |
 | Notifications inbox, read, read all | App | `notifications*` | No |
 | Notification topic settings | App | `GET/PUT notifications/preferences` | No |
-| Push notifications (FCM/APNs) | — | `devices/push` exists; app has no Firebase setup | — |
+| Push notifications (FCM/APNs) | App (needs your Firebase files, see push.md) | `devices/push`, `DELETE devices/push` | No |
 | Help desk: list, create with files, chat, actions | App | `support/categories`, `cases*`, `attachments/{id}` | No |
 | Calendar agenda + RSVP | App | `calendar`, `calendar/invitations/{id}/respond` | No |
 | Language EN/AR (RTL), theme, motion setting | App | — | No |
+| Links `onesource://cases/…`, `trips/…`, `attendance` from outside the app and from push | App | — | No |
+| Unsent case text kept as a draft on the phone | App | — | No |
 
 ## Staff
 
@@ -28,17 +30,19 @@ Legend: **App** = native screen in this app · **Web** = opens the ERP in the br
 | Module library from server permissions | App | `GET me` (`permissions`, `areas`, `modules`) | No |
 | Attendance: today, check in / break / check out, location | App (agent companies) | `attendance/today`, `attendance/punch` | No |
 | Attendance month, correction requests | App | `attendance/month`, `attendance/corrections` | No |
-| Attendance approval / board (managers) | Web | — | — |
+| Team board and correction approvals (managers) | App | `attendance/team`, `attendance/approvals`, `attendance/approvals/{id}/approve\|reject` (PR #254) | No |
 | "Mark your attendance" reminder | App (home card) | `attendance/today` | No |
 | Admin requests to users (e.g. change password) | App shows count, completes on Web | `GET me` → `requests` | No |
 | Help desk queues, internal notes, assign | App | `cases?queue=`, `cases/{id}/messages`, `actions/*` | No |
 | Renewals queues and status moves | App | `renewals`, `renewals/{ref}/actions/{status}` | No |
 | Care calls: record / no answer | App | `care/checkins*` | No |
 | Bed board, check in / out a stay | App | `accommodation/board`, `accommodation/stays/{id}/{action}` | No |
-| Assign / move a bed | Web | `POST accommodation/stays` exists; the app has no subject search | — |
+| Assign / move a bed | App | `accommodation/subjects` (PR #254), `POST accommodation/stays`, `stays/{id}/move` | No |
 | Driver day, milestones, PIN, passengers, photo proof, decline | App | `driver/trips`, `trips/{ref}/*` | No |
-| Trainer sessions, roster attendance, check-in code | App | `training/staff/sessions*` | No |
-| Assessor rubric form, enrolment approval | — | endpoints exist (`assessor-tasks`, `assessments`, `approve`) | — |
+| Driver milestones without signal (sent later with original time and place) | App (outbox) | `trips/{ref}/status` with `reported_at` | No |
+| Trainer sessions, roster attendance, check-in code as QR | App | `training/staff/sessions*` | No |
+| Assessor rubric form with evidence photos | App | `training/staff/assessor-tasks` (rubric added in PR #254), `…/assessments` | No |
+| Training nomination approvals | App | `training/staff/approvals` (PR #254), `…/approve` | No |
 | CRM, finance, HRM, outside recruitment, packages, agent network, GM, chatbot, events admin | Web | — | — |
 
 ## Customers and workers
@@ -48,6 +52,6 @@ Legend: **App** = native screen in this app · **Web** = opens the ERP in the br
 | Worker home: documents, bed, trips, training, certificates | App | `my/overview` | No |
 | Customer home: placements, contracts, recruitment, pickup | App | `my/overview` | No |
 | My learning, catalogue, request, withdraw | App | `training/my`, `training/catalogue`, `training/requests`, `training/enrolments/{id}/withdraw` | No |
-| Session check-in by code | App (typed code; no QR scanner) | `training/sessions/{id}/check-in` | No |
-| Course materials and quizzes | — | endpoints exist (`materials`, `quizzes`) | — |
+| Session check-in by QR scan or typed code | App | `training/sessions/{id}/check-in` | No |
+| Course materials (text, files) and quizzes with saved progress | App | `training/courses/{code}/materials`, `materials/{id}/file`, `quizzes/{id}`, `quizzes/{id}/draft` | No |
 | Candidate catalogue, shortlist, agreements, e-signature, invoices, payments, salary statements | — | not in API v1 | — |

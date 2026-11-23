@@ -9,6 +9,7 @@ import '../../core/api/api_client.dart';
 import '../../core/api/api_exception.dart';
 import '../../core/api/api_result.dart';
 import '../../core/auth/session_controller.dart';
+import '../../core/offline/offline_store.dart';
 import '../../core/i18n/i18n.dart';
 import '../../core/theme/palette.dart';
 import '../../core/util/format.dart';
@@ -68,6 +69,7 @@ class _DriverScreenState extends ConsumerState<DriverScreen> {
         ),
       ),
       children: [
+        const _Outbox(),
         AsyncBody(
           value: trips,
           onRetry: () => ref.invalidate(tripsProvider(key)),
@@ -180,12 +182,21 @@ class _TripCard extends ConsumerWidget {
     } catch (_) {
       // location is optional for trip milestones
     }
+    final key = ApiClient.newKey();
+    final path = 'trips/${t['reference']}/status';
     try {
-      await ref.read(apiProvider).post('trips/${t['reference']}/status', body: body, idempotencyKey: ApiClient.newKey());
+      await ref.read(apiProvider).post(path, body: body, idempotencyKey: key);
       onChanged();
       if (context.mounted) Toast.success(context, context.tr('saved'));
     } on ApiException catch (e) {
-      if (context.mounted) Toast.error(context, e);
+      if (e.isOffline && to != 'completed') {
+        // no signal: keep the milestone with its time and place; it is sent when the connection is back
+        await ref.read(offlineStoreProvider).enqueue(OutboxItem(key: key, path: path, body: body, label: '${t['reference']} · ${context.tr('trips.step.$to')}'));
+        ref.read(outboxVersionProvider.notifier).state++;
+        if (context.mounted) Toast.info(context, context.tr('outbox.queued'));
+      } else if (context.mounted) {
+        Toast.error(context, e);
+      }
     }
   }
 
@@ -230,4 +241,54 @@ class _Stop extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Row(children: [Icon(icon, color: color, size: 24), const SizedBox(width: 10), Expanded(child: Text(text, style: const TextStyle(fontWeight: FontWeight.w600)))]);
+}
+
+/// Milestones saved on the phone while offline. Shown as pending until the ERP accepts them.
+class _Outbox extends ConsumerStatefulWidget {
+  const _Outbox();
+
+  @override
+  ConsumerState<_Outbox> createState() => _OutboxState();
+}
+
+class _OutboxState extends ConsumerState<_Outbox> {
+  bool _busy = false;
+
+  Future<void> _send() async {
+    setState(() => _busy = true);
+    final r = await ref.read(offlineStoreProvider).flush(ref.read(sessionProvider.notifier));
+    ref.read(outboxVersionProvider.notifier).state++;
+    if (!mounted) return;
+    setState(() => _busy = false);
+    if (r.sent.isNotEmpty) {
+      Toast.success(context, context.tr('outbox.sent', {'n': r.sent.length}));
+      ref.invalidate(tripsProvider);
+    }
+    for (final (item, e) in r.refused) {
+      Toast.error(context, ApiException(code: e.code, message: '${item.label}: ${e.message}'));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.watch(outboxVersionProvider);
+    final items = ref.read(offlineStoreProvider).outbox;
+    if (items.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(color: Palette.warning.withValues(alpha: .1), borderRadius: BorderRadius.circular(18), border: Border.all(color: Palette.warning.withValues(alpha: .4))),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Row(children: [
+            const Icon(Icons.cloud_upload_rounded, color: Palette.warning),
+            const SizedBox(width: 10),
+            Expanded(child: Text(context.tr('outbox.pending', {'n': items.length}), style: const TextStyle(fontWeight: FontWeight.w800))),
+            TextButton(onPressed: _busy ? null : _send, child: _busy ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : Text(context.tr('outbox.send_now'))),
+          ]),
+          for (final i in items) Text('• ${i.label} · ${Fmt.time(i.createdAt, context.lang)}', style: const TextStyle(fontSize: 12.5)),
+        ]),
+      ),
+    );
+  }
 }

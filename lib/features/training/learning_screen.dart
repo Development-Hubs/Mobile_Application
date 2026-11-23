@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../core/api/api_client.dart';
 import '../../core/api/api_exception.dart';
@@ -12,6 +13,8 @@ import '../../core/util/format.dart';
 import '../../core/util/json.dart';
 import '../../core/widgets/paged_list.dart';
 import '../../core/widgets/ui.dart';
+
+import 'training_extra.dart';
 
 final myLearningProvider = FutureProvider.autoDispose<ApiResult>((ref) async {
   ref.watch(epochProvider);
@@ -101,8 +104,21 @@ class LearningScreen extends ConsumerWidget {
       return;
     }
     final s = sessions.first;
-    final code = await askText(context, title: context.tr('learning.check_in'), hint: context.tr('learning.code_hint'), required: true, maxLines: 1);
-    if (code == null) return;
+    final how = await showModalBottomSheet<String>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          ListTile(title: Text(str(s['course']) ?? '', style: const TextStyle(fontWeight: FontWeight.w800)), subtitle: Text(Fmt.dateTime(date(s['starts_at']), context.lang))),
+          ListTile(leading: const IconBadge(Icons.qr_code_scanner_rounded), title: Text(context.tr('qr.scan')), onTap: () => Navigator.pop(context, 'scan')),
+          ListTile(leading: const IconBadge(Icons.keyboard_rounded, color: Palette.navySoft), title: Text(context.tr('qr.type')), onTap: () => Navigator.pop(context, 'type')),
+        ]),
+      ),
+    );
+    if (how == null || !context.mounted) return;
+    final code = how == 'scan'
+        ? await Navigator.of(context).push<String>(MaterialPageRoute(builder: (_) => const QrScanScreen()))
+        : await askText(context, title: context.tr('learning.check_in'), hint: context.tr('learning.code_hint'), required: true, maxLines: 1);
+    if (code == null || code.isEmpty) return;
     try {
       final res = await ref.read(apiProvider).post('training/sessions/${s['id']}/check-in', body: {'code': code});
       ref.invalidate(myLearningProvider);
@@ -148,6 +164,15 @@ class _Enrolment extends ConsumerWidget {
                   leading: Icon(r['outcome'] == 'pass' ? Icons.emoji_events_rounded : Icons.assignment_rounded, color: r['outcome'] == 'pass' ? Palette.gold : null),
                   title: Text('${Fmt.humanize(str(r['method']))} · ${Fmt.humanize(str(r['outcome']))}'),
                   subtitle: str(r['feedback']) == null ? null : Text(str(r['feedback'])!),
+                ),
+              if (str(course['code']) != null && const {'enrolled', 'in_progress', 'completed', 'approved'}.contains(e['state']))
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: TextButton.icon(
+                    onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => MaterialsScreen(code: str(course['code'])!, name: str(course['name']) ?? ''))),
+                    icon: const Icon(Icons.auto_stories_rounded),
+                    label: Text(context.tr('learning.materials')),
+                  ),
                 ),
               if (strList(e['actions']).contains('withdraw'))
                 Align(
@@ -335,9 +360,15 @@ class _Session extends ConsumerWidget {
             Text(context.tr('trainer.code'), style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 18),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 18),
-              decoration: BoxDecoration(gradient: Palette.heroGradient, borderRadius: BorderRadius.circular(22)),
-              child: Text('${r.map['code']}', style: const TextStyle(color: Colors.white, fontSize: 40, letterSpacing: 8, fontWeight: FontWeight.w800)),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), border: Border.all(color: Palette.gold, width: 2)),
+              child: QrImageView(data: '${r.map['code']}', size: 220, eyeStyle: const QrEyeStyle(eyeShape: QrEyeShape.square, color: Palette.maroon), dataModuleStyle: const QrDataModuleStyle(dataModuleShape: QrDataModuleShape.square, color: Palette.navy)),
+            ),
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+              decoration: BoxDecoration(gradient: Palette.heroGradient, borderRadius: BorderRadius.circular(18)),
+              child: Text('${r.map['code']}', style: const TextStyle(color: Colors.white, fontSize: 30, letterSpacing: 6, fontWeight: FontWeight.w800)),
             ),
             const SizedBox(height: 12),
             Text(context.tr('trainer.code_valid', {'m': r.map['expires_in_minutes'] ?? 30}), style: TextStyle(color: Theme.of(context).hintColor)),

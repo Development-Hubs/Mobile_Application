@@ -12,11 +12,11 @@ The mobile companion of the OneSource ERP, for **staff**, **customers** and **wo
 | Security | everyone | Token in Keychain / Android Keystore storage; optional biometric unlock through the OS (no face images); signed-in devices list; sign out here or everywhere. |
 | Home | staff | Live attendance card with a **"Please mark your attendance"** reminder, admin requests, unread counts, and the modules the ERP allows. |
 | Home | customer / worker | Document expiry bars, accommodation, trips, training, certificates (worker); placements, contracts, recruitment and pickup (customer). |
-| Attendance | staff of agent companies | Live clock ring, check in, breaks, check out (with confirmation), location when the company requires it, timeline, month calendar, correction requests. |
+| Attendance | staff of agent companies | Live clock ring, check in, breaks, check out (with confirmation), location when the company requires it, timeline, month calendar, correction requests. Managers: today's team board and approve / reject corrections. |
 | Help desk | everyone | Cases with queues (staff), chat-style conversation, internal notes (staff), attachments up/download, case actions. |
-| Inbox | everyone | Notifications, mark read, per-topic push settings, links into cases and trips. |
-| Renewals, care calls, bed board, driver trips, trainer sessions | staff with those permissions | Queues and actions from `/api/mobile/v1`. |
-| Learning | customer / worker | Requirements, enrolments, sessions, results, certificates, catalogue, request a place, withdraw, session check-in with a code. |
+| Inbox and push | everyone | Notifications, mark read, per-topic push settings, push via Firebase (after your setup, see docs/push.md), `onesource://` links into cases, trips and attendance. |
+| Renewals, care calls, bed board (assign, check in/out, move), driver trips (with an offline outbox), trainer sessions (QR check-in code), assessments (rubric + evidence photos), training approvals | staff with those permissions | Queues and actions from `/api/mobile/v1`. |
+| Learning | customer / worker | Requirements, enrolments, sessions, results, certificates, course materials, quizzes with saved progress, catalogue, request a place, withdraw, session check-in by QR scan or code. |
 | Calendar | everyone | 30-day agenda with RSVP. |
 | More | everyone | Module library built from `GET me`. ERP modules that have no mobile screens yet open the ERP in the browser and are labelled so. |
 | Settings | everyone | Language (auto / English / Arabic), theme, **motion** (follow device / reduced / full), biometrics, devices, about. |
@@ -35,7 +35,7 @@ cp config/demoagent.example.json config/demoagent.local.json
 flutter run --dart-define-from-file=config/demoagent.local.json
 ```
 
-`tool/bootstrap.sh` runs `flutter create` (which never overwrites existing files), removes the template's sample test, then `tool/configure_platforms.py` adds the iOS usage descriptions (Face ID, camera, photos, location), Arabic/English localisations, iOS 13 minimum, and Android `minSdk 24`. The committed `AndroidManifest.xml` and `MainActivity.kt` (a `FlutterFragmentActivity`, needed by `local_auth`) are kept.
+`tool/bootstrap.sh` runs `flutter create` (which never overwrites existing files), removes the template's sample test, generates the app icons from `assets/brand` (`flutter_launcher_icons`), then `tool/configure_platforms.py` adds the iOS usage descriptions (Face ID, camera, photos, location), Arabic/English localisations, the `onesource://` URL scheme, background push, iOS 13 minimum, and Android `minSdk 24`. The committed `AndroidManifest.xml` and `MainActivity.kt` (a `FlutterFragmentActivity`, needed by `local_auth`) are kept.
 
 ### Environments
 
@@ -95,4 +95,4 @@ dart run tool/check_strings.dart
 
 ## Backend
 
-The app uses the existing `/api/mobile/v1` of the ERP. Two additions were made for this app in the ERP repository ([Development-Hubs/chatbot#253](https://github.com/Development-Hubs/chatbot/pull/253)): staff `permissions`, `data_scope`, `modules` and `attendance` in `GET me`, and the `attendance/*` endpoints. See [docs/api.md](docs/api.md).
+The app uses the existing `/api/mobile/v1` of the ERP plus additions made for it in the ERP repository: [#253](https://github.com/Development-Hubs/chatbot/pull/253) (permissions in `GET me`, staff attendance) and [#254](https://github.com/Development-Hubs/chatbot/pull/254) (manager attendance, bed subject search, training approvals, assessor rubric). See [docs/api.md](docs/api.md).

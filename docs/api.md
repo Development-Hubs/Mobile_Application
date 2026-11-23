@@ -26,3 +26,14 @@ Adds `user_id`, `owner`, `permissions[]`, `data_scope` (`own|team|all`), `module
 | `POST attendance/corrections` | `date`, `kind`, `check_in?`, `check_out?`, `break_minutes?`, `reason` + `Idempotency-Key` | `201 {id, status}` |
 
 The same `WebAttendance` service and company rules (location radius, breaks, shift) are used as on the web dashboard.
+
+## Added in chatbot PR #254
+
+| Call | Who | Notes |
+|---|---|---|
+| `GET attendance/team` | `hrm.view` or HR deciders | today's board, `meta.counts` |
+| `GET attendance/approvals` | `hrm.edit` or owner | pending corrections |
+| `POST attendance/approvals/{id}/approve\|reject` | `hrm.edit` or owner | `{note?}`, idempotent, `409` when already answered |
+| `GET accommodation/subjects?q=` | `accommodation.edit` | workers and candidates with their current stay |
+| `GET training/staff/approvals` | `training.approve` | nominations waiting |
+| `GET training/staff/assessor-tasks` | `training.assess` | now also returns each learner's `rubric` and `meta.methods` |

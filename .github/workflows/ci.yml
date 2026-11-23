@@ -20,6 +20,7 @@ jobs:
           rm -f test/widget_test.dart
           python3 tool/configure_platforms.py
       - run: flutter pub get
+      - run: dart run flutter_launcher_icons
       - run: dart run tool/check_strings.dart
       - run: dart format --output=none --set-exit-if-changed --line-length 200 lib test
         continue-on-error: true

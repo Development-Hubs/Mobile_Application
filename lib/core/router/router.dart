@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/accommodation/beds_screen.dart';
 import '../../features/attendance/attendance_month_screen.dart';
 import '../../features/attendance/attendance_screen.dart';
+import '../../features/attendance/team_screen.dart';
 import '../../features/auth/gate_screens.dart';
 import '../../features/auth/otp_screen.dart';
 import '../../features/auth/sign_in_screen.dart';
@@ -21,6 +22,7 @@ import '../../features/notifications/notifications_screen.dart';
 import '../../features/renewals/renewals_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../features/training/learning_screen.dart';
+import '../../features/training/training_extra.dart';
 import '../auth/session_controller.dart';
 import '../theme/motion.dart';
 
@@ -63,6 +65,9 @@ bool _allowed(SessionState s, String loc) {
   if (starts('/trips')) return me.driver;
   if (starts('/trainer')) return me.area('training');
   if (starts('/learning')) return !me.isStaff;
+  if (starts('/team')) return me.attendance && (me.can('hrm.view') || me.can('hrm.edit'));
+  if (starts('/assessor')) return me.modules.contains('training') && me.can('training.assess');
+  if (starts('/training-approvals')) return me.modules.contains('training') && me.can('training.approve');
   return true;
 }
 
@@ -125,6 +130,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(parentNavigatorKey: _rootKey, path: '/trips', builder: (_, __) => const DriverScreen()),
       GoRoute(parentNavigatorKey: _rootKey, path: '/learning', builder: (_, __) => const LearningScreen()),
       GoRoute(parentNavigatorKey: _rootKey, path: '/trainer', builder: (_, __) => const TrainerScreen()),
+      GoRoute(parentNavigatorKey: _rootKey, path: '/team', builder: (_, s) => TeamAttendanceScreen(approvals: s.uri.queryParameters['tab'] == 'approvals')),
+      GoRoute(parentNavigatorKey: _rootKey, path: '/assessor', builder: (_, __) => const AssessorScreen()),
+      GoRoute(parentNavigatorKey: _rootKey, path: '/training-approvals', builder: (_, __) => const TrainingApprovalsScreen()),
       GoRoute(parentNavigatorKey: _rootKey, path: '/calendar', builder: (_, __) => const CalendarScreen()),
       GoRoute(parentNavigatorKey: _rootKey, path: '/settings', builder: (_, __) => const SettingsScreen()),
       GoRoute(parentNavigatorKey: _rootKey, path: '/devices', builder: (_, __) => const DevicesScreen()),
