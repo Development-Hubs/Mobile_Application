@@ -184,6 +184,8 @@ class _TripCard extends ConsumerWidget {
     }
     final key = ApiClient.newKey();
     final path = 'trips/${t['reference']}/status';
+    if (!context.mounted) return;
+    final label = '${t['reference']} · ${context.tr('trips.step.$to')}';
     try {
       await ref.read(apiProvider).post(path, body: body, idempotencyKey: key);
       onChanged();
@@ -191,7 +193,6 @@ class _TripCard extends ConsumerWidget {
     } on ApiException catch (e) {
       if (e.isOffline && to != 'completed') {
         // no signal: keep the milestone with its time and place; it is sent when the connection is back
-        final label = '${t['reference']} · ${context.tr('trips.step.$to')}';
         await ref.read(offlineStoreProvider).enqueue(OutboxItem(key: key, path: path, body: body, label: label));
         ref.read(outboxVersionProvider.notifier).state++;
         if (context.mounted) Toast.info(context, context.tr('outbox.queued'));
