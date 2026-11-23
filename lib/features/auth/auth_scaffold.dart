@@ -10,7 +10,7 @@ import '../../core/widgets/brand.dart';
 import '../../core/widgets/doha_skyline.dart';
 import '../../core/widgets/ui.dart';
 
-/// Sign-in layout: a maroon brand band with the West Bay silhouette, and a light sheet that holds the form.
+/// Sign-in layout: a photograph of the Doha skyline under a maroon wash, and a light sheet that holds the form.
 class AuthScaffold extends ConsumerWidget {
   const AuthScaffold({super.key, required this.child, this.title, this.subtitle, this.showBack = false, this.footer});
 
@@ -24,7 +24,7 @@ class AuthScaffold extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final media = MediaQuery.of(context);
     final keyboard = media.viewInsets.bottom > 0;
-    final band = keyboard ? 140.0 : (media.size.height * .32).clamp(220.0, 300.0).toDouble();
+    final band = keyboard ? 130.0 : (media.size.height * .36).clamp(230.0, 330.0).toDouble();
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
@@ -34,9 +34,8 @@ class AuthScaffold extends ConsumerWidget {
           AnimatedContainer(
             duration: MotionScope.duration(context, const Duration(milliseconds: 250)),
             height: band + 40,
-            decoration: const BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Palette.maroonDeep, Palette.maroon])),
-            child: Stack(children: [
-              if (!keyboard) const Positioned(left: 0, right: 0, bottom: 34, child: SkylineSilhouette(height: 120)),
+            child: Stack(fit: StackFit.expand, children: [
+              const DohaPhoto(),
               SafeArea(
                 bottom: false,
                 child: Padding(

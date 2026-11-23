@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/api/api_exception.dart';
 import '../../core/auth/session_controller.dart';
-import '../../core/config/env.dart';
 import '../../core/i18n/i18n.dart';
 import '../../core/theme/motion.dart';
 import '../../core/theme/palette.dart';
@@ -75,11 +74,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   final _emailCtl = TextEditingController();
   final _password = TextEditingController();
   final _mfa = TextEditingController();
-  final _company = TextEditingController(text: Env.companyCode);
   bool _hasInvite = false;
   bool _showPassword = false;
   bool _needMfa = false;
-  bool _needCompany = false; // only when the ERP cannot tell the company from the address or the email
   ApiException? _error;
 
   @override
@@ -93,7 +90,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
   @override
   void dispose() {
-    for (final c in [_phone, _invite, _emailCtl, _password, _mfa, _company]) {
+    for (final c in [_phone, _invite, _emailCtl, _password, _mfa]) {
       c.dispose();
     }
     super.dispose();
@@ -114,7 +111,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   Future<void> _staff() async {
     setState(() => _error = null);
     try {
-      await ref.read(sessionProvider.notifier).staffLogin(company: _company.text, email: _emailCtl.text, password: _password.text, mfaCode: _needMfa ? _mfa.text : null);
+      await ref.read(sessionProvider.notifier).staffLogin(email: _emailCtl.text, password: _password.text, mfaCode: _needMfa ? _mfa.text : null);
       _password.clear();
       _mfa.clear();
     } on ApiException catch (e) {
@@ -125,7 +122,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
           _error = e.code == 'mfa_invalid' ? e : null;
         } else {
           _error = e;
-          if (e.fieldError('company') != null) _needCompany = true;
         }
       });
       HapticFeedback.mediumImpact();
@@ -156,7 +152,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
   Widget _errorBanner() {
     final e = _error;
-    if (e == null || (e.fields.isNotEmpty && e.code == 'validation_failed')) return const SizedBox.shrink();
+    if (e == null || (e.fields.isNotEmpty && e.code == 'validation_failed' && e.fieldError('company') == null)) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: Container(
@@ -165,7 +161,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         child: Row(children: [
           Icon(e.isOffline ? Icons.wifi_off_rounded : Icons.error_outline_rounded, color: Palette.danger, size: 20),
           const SizedBox(width: 10),
-          Expanded(child: Text(e.message, style: const TextStyle(color: Palette.danger, fontWeight: FontWeight.w500))),
+          Expanded(child: Text(e.fieldError('company') != null ? context.tr('auth.company_unknown') : e.message, style: const TextStyle(color: Palette.danger, fontWeight: FontWeight.w500))),
         ]),
       ),
     );
@@ -204,31 +200,12 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         ],
         const SizedBox(height: 20),
         BusyButton(label: context.tr('auth.send_code'), onPressed: _sendCode),
-        const SizedBox(height: 28),
-        Row(children: [
-          const Expanded(child: Divider()),
-          Padding(padding: const EdgeInsets.symmetric(horizontal: 12), child: Text(context.tr('auth.new_customer'), style: Theme.of(context).textTheme.bodySmall)),
-          const Expanded(child: Divider()),
-        ]),
-        const SizedBox(height: 16),
-        OutlinedButton.icon(
-          onPressed: () => context.push('/register'),
-          icon: const Icon(Icons.person_add_alt_1_outlined),
-          label: Text(context.tr('auth.create_account')),
-        ),
+        const SizedBox(height: 24),
+        const _RegisterCard(),
       ]);
 
   Widget _emailForm() => Column(key: const ValueKey('email'), crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         _errorBanner(),
-        if (_needCompany) ...[
-          _label('auth.company_code'),
-          TextField(
-            controller: _company,
-            textCapitalization: TextCapitalization.characters,
-            decoration: InputDecoration(prefixIcon: const Icon(Icons.apartment_outlined), errorText: _error?.fieldError('company')),
-          ),
-          const SizedBox(height: 16),
-        ],
         _label('auth.email'),
         TextField(
           controller: _emailCtl,
@@ -345,6 +322,50 @@ class _Tabs extends StatelessWidget {
         tab(false, Icons.smartphone_rounded, context.tr('auth.method_phone')),
         tab(true, Icons.badge_outlined, context.tr('auth.method_email')),
       ]),
+    );
+  }
+}
+
+/// "New customer? Create your account" — the entry to registration, shown under the phone form.
+class _RegisterCard extends StatelessWidget {
+  const _RegisterCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Material(
+      color: Palette.gold.withValues(alpha: .10),
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: () => context.push('/register'),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(18), border: Border.all(color: Palette.gold.withValues(alpha: .35))),
+          child: Row(children: [
+            Container(
+              width: 46,
+              height: 46,
+              decoration: const BoxDecoration(gradient: Palette.goldGradient, shape: BoxShape.circle),
+              child: const Icon(Icons.person_add_alt_1_rounded, color: Colors.white, size: 22),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(context.tr('auth.new_customer'), style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
+                const SizedBox(height: 2),
+                Text(context.tr('auth.create_account_body'), style: theme.textTheme.bodySmall),
+              ]),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(color: Palette.maroon, borderRadius: BorderRadius.circular(99)),
+              child: Text(context.tr('auth.create_account'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 12.5)),
+            ),
+          ]),
+        ),
+      ),
     );
   }
 }

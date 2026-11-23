@@ -95,6 +95,7 @@ class SettingsScreen extends ConsumerWidget {
           ListTile(leading: const IconBadge(Icons.dns_rounded, size: 38, color: Palette.navySoft), title: Text(context.tr('settings.server')), subtitle: Text(session.server)),
           if (Env.envName.isNotEmpty) ListTile(leading: const IconBadge(Icons.science_rounded, size: 38, color: Palette.warning), title: Text(context.tr('settings.environment')), trailing: const Text(Env.envName)),
           ListTile(leading: const IconBadge(Icons.privacy_tip_rounded, size: 38, color: Palette.success), title: Text(context.tr('settings.privacy')), subtitle: Text(context.tr('settings.privacy_body'))),
+          ListTile(leading: const IconBadge(Icons.photo_outlined, size: 38, color: Palette.navySoft), title: Text(context.tr('about.photo'), style: Theme.of(context).textTheme.bodySmall)),
         ]),
       ],
     );

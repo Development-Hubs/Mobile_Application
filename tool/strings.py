@@ -37,7 +37,7 @@ S = [
 ("workspace.kind.customer","Customer","عميل"),("workspace.kind.worker","Worker","عامل"),("workspace.kind.staff","Staff","موظف"),("workspace.kind.pending","Awaiting link","بانتظار الربط"),
 ("workspace.switch","Switch workspace","تبديل مساحة العمل"),("workspace.switch_body","Lists, drafts and files of the current workspace are cleared from this phone.","سيتم مسح القوائم والمسودات والملفات الحالية من هذا الهاتف."),
 ("lock.title","Welcome back {name}","مرحباً بعودتك {name}"),("lock.body","Unlock with your phone's fingerprint or face recognition.","افتح القفل ببصمة الهاتف أو التعرف على الوجه."),
-("lock.unlock","Unlock","فتح القفل"),("lock.use_password","Sign in with password instead","تسجيل الدخول بكلمة المرور بدلاً من ذلك"),("lock.reason","Unlock OneSource Connect","افتح OneSource Connect"),
+("lock.unlock","Unlock with Face ID / fingerprint","الدخول ببصمة الوجه / الإصبع"),("lock.use_password","Use another account","استخدام حساب آخر"),("lock.reason","Unlock OneSource Connect","افتح OneSource Connect"),
 ("pending.title","Link your record","اربط ملفك"),("pending.body","Enter the invitation code from the office to see your contract, documents and services.","أدخل رمز الدعوة من المكتب لعرض عقدك ومستنداتك وخدماتك."),
 ("pending.link","Link","ربط"),("pending.check","Check again","تحقق مرة أخرى"),
 # home
@@ -232,6 +232,14 @@ S = [
 ("common.optional","optional","اختياري"),
 ("pending.register","Register as a new customer","التسجيل كعميل جديد"),
 ("pending.register_body","No file yet? Open a customer file with the company.","ليس لديك ملف؟ افتح ملف عميل لدى الشركة."),
+("auth.create_account_body","Request workers and follow your contracts","اطلب العمالة وتابع عقودك"),
+("auth.company_unknown","This app could not tell which company you belong to. Ask your office to update the ERP, then try again.","تعذّر على التطبيق معرفة شركتك. اطلب من المكتب تحديث النظام ثم حاول مرة أخرى."),
+("lock.hint","Tap to use Face ID or your fingerprint","اضغط لاستخدام بصمة الوجه أو الإصبع"),
+("bio.offer_title","Sign in faster next time","دخول أسرع في المرة القادمة"),
+("bio.offer_body","Use Face ID or your fingerprint to open the app. Your face and fingerprint stay on this phone; the app never sees them.","استخدم بصمة الوجه أو الإصبع لفتح التطبيق. تبقى بصمتك على هاتفك ولا يطّلع عليها التطبيق."),
+("bio.offer_yes","Turn on","تفعيل"),
+("bio.offer_no","Not now","ليس الآن"),
+("about.photo","Photo: Doha skyline at night, Wikimedia Commons, CC BY 2.0","الصورة: أفق الدوحة ليلاً، ويكيميديا كومنز، CC BY 2.0"),
 ]
 STATUS = {
 "open":("Open","مفتوح"),"new":("New","جديد"),"in_progress":("In progress","قيد التنفيذ"),"awaiting_requester":("Waiting for you","بانتظارك"),"awaiting_internal":("Waiting internally","بانتظار داخلي"),

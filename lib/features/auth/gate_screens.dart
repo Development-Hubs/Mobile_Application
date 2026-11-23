@@ -240,26 +240,44 @@ class _LockScreenState extends ConsumerState<LockScreen> {
   @override
   Widget build(BuildContext context) {
     final me = ref.watch(sessionProvider).me;
+    final theme = Theme.of(context);
     return AuthScaffold(
       title: context.tr('lock.title', {'name': me?.name.split(' ').first ?? ''}),
       subtitle: context.tr('lock.body'),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        const SizedBox(height: 8),
         Center(
-          child: InkWell(
-            customBorder: const CircleBorder(),
-            onTap: _unlock,
-            child: Container(
-              width: 96,
-              height: 96,
-              decoration: BoxDecoration(shape: BoxShape.circle, gradient: Palette.heroGradient, boxShadow: [BoxShadow(color: Palette.maroon.withValues(alpha: .4), blurRadius: 24)]),
-              child: const Icon(Icons.fingerprint_rounded, color: Colors.white, size: 52),
+          child: Semantics(
+            button: true,
+            label: context.tr('lock.unlock'),
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: _unlock,
+              child: Container(
+                width: 112,
+                height: 112,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Palette.maroon.withValues(alpha: .06),
+                  border: Border.all(color: Palette.maroon.withValues(alpha: .18), width: 1.5),
+                ),
+                alignment: Alignment.center,
+                child: Container(
+                  width: 84,
+                  height: 84,
+                  decoration: BoxDecoration(shape: BoxShape.circle, gradient: Palette.heroGradient, boxShadow: [BoxShadow(color: Palette.maroon.withValues(alpha: .3), blurRadius: 22, offset: const Offset(0, 8))]),
+                  child: const Icon(Icons.fingerprint_rounded, color: Colors.white, size: 48),
+                ),
+              ),
             ),
           ),
         ),
-        const SizedBox(height: 20),
-        BusyButton(label: context.tr('lock.unlock'), icon: Icons.lock_open_rounded, onPressed: _unlock),
-        const SizedBox(height: 8),
-        TextButton(onPressed: () => ref.read(sessionProvider.notifier).signOut(), child: Text(context.tr('lock.use_password'))),
+        const SizedBox(height: 14),
+        Text(context.tr('lock.hint'), textAlign: TextAlign.center, style: theme.textTheme.bodySmall),
+        const SizedBox(height: 26),
+        BusyButton(label: context.tr('lock.unlock'), onPressed: _unlock),
+        const SizedBox(height: 10),
+        OutlinedButton(onPressed: () => ref.read(sessionProvider.notifier).signOut(), child: Text(context.tr('lock.use_password'))),
       ]),
     );
   }

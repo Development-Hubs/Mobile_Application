@@ -72,6 +72,14 @@ Remove-Item test\widget_test.dart -ErrorAction SilentlyContinue
 python tool\configure_platforms.py
 flutter pub get
 dart run flutter_launcher_icons
+# real Doha photograph for the sign-in and home screens (see assets/photos/CREDITS.md); the app draws the skyline without it
+if (-not (Test-Path "assets\photos\doha.jpg")) {
+  try {
+    Invoke-WebRequest -UseBasicParsing -UserAgent "OneSourceConnect-build/1.0" -OutFile "assets\photos\doha.jpg" `
+      -Uri "https://commons.wikimedia.org/wiki/Special:FilePath/DohaSkylineAtNight.jpg?width=1200"
+    Write-Host "Doha photo downloaded."
+  } catch { Remove-Item "assets\photos\doha.jpg" -ErrorAction SilentlyContinue; Write-Host "Photo not downloaded; the app will draw the skyline." -ForegroundColor Yellow }
+}
 if (-not (Test-Path "config\$Target.local.json")) { Copy-Item "config\$Target.example.json" "config\$Target.local.json" }
 
 Step "Analyze"
@@ -83,5 +91,7 @@ Stop-Transcript | Out-Null
 Step "Run (press r to reload, q to quit)"
 $device = Get-Emulator
 if (-not $device) { Write-Host "The emulator did not start. Open Android Studio > Device Manager, start onesource_pixel, then run this script again." -ForegroundColor Red; exit 1 }
-Write-Host "Installing on $device (first build takes a few minutes)..."
+# remove the old build so the phone can never keep showing a previous version
+& $adb -s $device uninstall qa.onesource.onesource_connect 2>$null | Out-Null
+Write-Host "Installing the new version on $device (first build takes a few minutes)..."
 flutter run -d $device --dart-define-from-file="config\$Target.local.json"

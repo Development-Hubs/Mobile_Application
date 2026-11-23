@@ -50,6 +50,9 @@ flutter_launcher_icons:
 
 flutter:
   uses-material-design: true
+  assets:
+    # real photograph of Doha, fetched by tool/fetch_photos (see assets/photos/CREDITS.md); the app draws the skyline if it is missing
+    - assets/photos/
   fonts:
     # IBM Plex Sans Arabic (SIL Open Font License, assets/fonts/OFL-IBMPlexSansArabic.txt): Arabic and Latin in one family
     - family: Plex

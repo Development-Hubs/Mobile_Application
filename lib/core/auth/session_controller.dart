@@ -53,6 +53,15 @@ class SessionState {
       );
 }
 
+/// The company subdomain of an ERP address: `https://demoagent.onesourceerp.com` → `demoagent`.
+/// Empty for a bare domain or a shared host name (www, app, api, erp).
+String companyFromServer(String server) {
+  final host = Uri.tryParse(server.startsWith('http') ? server : 'https://$server')?.host ?? '';
+  final parts = host.split('.');
+  if (parts.length < 3 || RegExp(r'^\d+$').hasMatch(parts.first)) return '';
+  return const {'www', 'app', 'api', 'erp', 'portal', 'mobile'}.contains(parts.first) ? '' : parts.first;
+}
+
 final apiProvider = Provider<ApiClient>((ref) => ApiClient());
 final sessionStoreProvider = Provider<SessionStore>((ref) => SessionStore());
 
@@ -89,7 +98,8 @@ class SessionController extends Notifier<SessionState> {
 
     final (savedServer, savedCompany) = await _store.readTarget();
     final server = (Env.allowCustomServer ? savedServer : null) ?? (Env.baseUrl.isNotEmpty ? Env.baseUrl : savedServer ?? '');
-    final company = savedCompany ?? Env.companyCode;
+    // Nobody types a company code: it comes from the build, or from the address (demoagent.onesourceerp.com → demoagent).
+    final company = (savedCompany != null && savedCompany.isNotEmpty) ? savedCompany : (Env.companyCode.isNotEmpty ? Env.companyCode : companyFromServer(server));
     if (server.isEmpty) {
       state = state.copyWith(phase: Phase.connect, company: company);
       return;
@@ -161,14 +171,14 @@ class SessionController extends Notifier<SessionState> {
   /// [company] is optional: the ERP finds the company from the address or the email, and asks for the
   /// code (field error `company`) only when it cannot.
   Future<void> staffLogin({String company = '', required String email, required String password, String? mfaCode}) async {
+    final code = company.trim().isNotEmpty ? company.trim() : state.company;
     final r = await _api.post('auth/staff/login', body: {
-      if (company.trim().isNotEmpty) 'company': company.trim(),
+      if (code.isNotEmpty) 'company': code,
       'email': email.trim(),
       'password': password,
       if (mfaCode != null && mfaCode.isNotEmpty) 'mfa_code': mfaCode.trim(),
       'device_name': deviceName,
     });
-    final code = company.trim().isNotEmpty ? company.trim() : state.company;
     await _store.writeTarget(state.server, code);
     state = state.copyWith(company: code);
     await _adopt(r.map);

@@ -365,3 +365,41 @@ class _SilhouettePainter extends CustomPainter {
   @override
   bool shouldRepaint(_SilhouettePainter old) => old.opacity != opacity;
 }
+
+/// A real photograph of Doha (assets/photos/doha.jpg) under a maroon wash so text on it stays readable.
+/// Falls back to the drawn silhouette when the photograph is not part of the build.
+class DohaPhoto extends StatelessWidget {
+  const DohaPhoto({super.key, this.wash = .55, this.alignment = const Alignment(0, -.2)});
+
+  /// Strength of the maroon overlay at the bottom (0–1).
+  final double wash;
+  final Alignment alignment;
+
+  @override
+  Widget build(BuildContext context) => Stack(fit: StackFit.expand, children: [
+        Image.asset(
+          'assets/photos/doha.jpg',
+          fit: BoxFit.cover,
+          alignment: alignment,
+          filterQuality: FilterQuality.medium,
+          errorBuilder: (_, __, ___) => const DecoratedBox(
+            decoration: BoxDecoration(gradient: Palette.heroGradient),
+            child: Align(alignment: Alignment.bottomCenter, child: SkylineSilhouette(height: 140)),
+          ),
+        ),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Palette.maroonDeep.withValues(alpha: .55),
+                Palette.maroon.withValues(alpha: wash * .45),
+                Palette.maroonDeep.withValues(alpha: wash + .25 > 1 ? 1 : wash + .25),
+              ],
+              stops: const [0, .45, 1],
+            ),
+          ),
+        ),
+      ]);
+}

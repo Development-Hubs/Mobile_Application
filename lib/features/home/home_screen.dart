@@ -70,12 +70,12 @@ class _Hero extends ConsumerWidget {
     final role = me.isStaff ? (me.jobTitle ?? context.tr('home.staff')) : context.tr('workspace.kind.${me.type}');
     return Container(
       decoration: const BoxDecoration(
-        gradient: Palette.heroGradient,
+        color: Palette.maroonDeep,
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(30)),
       ),
       clipBehavior: Clip.antiAlias,
       child: Stack(children: [
-        const Positioned(left: 0, right: 0, bottom: 0, child: SkylineSilhouette(height: 120, opacity: .9)),
+        const Positioned.fill(child: DohaPhoto(wash: .7, alignment: Alignment(0, .1))),
         HeaderTone(
           onBrand: true,
           child: Padding(

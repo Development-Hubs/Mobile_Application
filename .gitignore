@@ -36,3 +36,4 @@ ios/Runner/GoogleService-Info.plist
 *.mobileprovision
 *.p12
 *.cer
+assets/photos/*.jpg
